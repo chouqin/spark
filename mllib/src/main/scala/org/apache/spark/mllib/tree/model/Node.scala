@@ -21,6 +21,9 @@ import org.apache.spark.annotation.DeveloperApi
 import org.apache.spark.Logging
 import org.apache.spark.mllib.tree.configuration.FeatureType._
 import org.apache.spark.mllib.linalg.Vector
+import org.apache.spark.rdd.RDD
+import org.apache.spark.mllib.regression.LabeledPoint
+import org.apache.spark.SparkContext.doubleRDDToDoubleRDDFunctions
 
 /**
  * :: DeveloperApi ::
@@ -37,7 +40,7 @@ import org.apache.spark.mllib.linalg.Vector
 class Node (
     val id: Int,
     val predict: Double,
-    val isLeaf: Boolean,
+    var isLeaf: Boolean,
     val split: Option[Split],
     var leftNode: Option[Node],
     var rightNode: Option[Node],
@@ -67,6 +70,7 @@ class Node (
     }
   }
 
+
   /**
    * predict value if node is not leaf
    * @param features feature value
@@ -76,21 +80,76 @@ class Node (
     if (isLeaf) {
       predict
     } else{
-      if (split.get.featureType == Continuous) {
-        if (features(split.get.feature) <= split.get.threshold) {
-          leftNode.get.predict(features)
-        } else {
-          rightNode.get.predict(features)
-        }
+      if (splitLeft(features)) {
+        leftNode.get.predict(features)
       } else {
-        if (split.get.categories.contains(features(split.get.feature))) {
-          leftNode.get.predict(features)
-        } else {
-          rightNode.get.predict(features)
-        }
+        rightNode.get.predict(features)
       }
     }
   }
+
+  /**
+   *
+   * @param validationInput
+   * @param isClassification
+   * @param threshold
+   */
+  def prune(validationInput: RDD[(Double, Double)],
+            isClassification: Boolean, threshold: Double=0.1) : Unit = {
+    if (!isLeaf) {
+      if (predictErrorLeaf(validationInput, isClassification) <=
+        predictError(validationInput, isClassification) + threshold) {
+        // if this node as leaf has less error, remove left and right branches
+        isLeaf = true
+        leftNode = None
+        rightNode = None
+      } else {
+        leftNode.get.prune(validationInput, isClassification, threshold)
+        rightNode.get.prune(validationInput, isClassification, threshold)
+      }
+    }
+  }
+
+  private def splitLeft(features: Vector) : Boolean = {
+    if (split.get.featureType == Continuous) {
+      features(split.get.feature) <= split.get.threshold
+    } else {
+      split.get.categories.contains(features(split.get.feature))
+    }
+  }
+
+  private def predictErrorLeaf(input: RDD[(Double, Double)], isClassification: Boolean) : Double = {
+    val predictAndLabels = input.map(p => (predict, p._2))
+    predictError(predictAndLabels, isClassification)
+  }
+
+  private def predictError(input: RDD[(Double, Double)], isClassification: Boolean) : Double = {
+    if (isClassification) {
+      1 - accuracyScore(input)
+    } else {
+      meanSquaredError(input)
+    }
+  }
+
+  /**
+   * Calculates the classifier accuracy.
+   */
+  private def accuracyScore(data: RDD[(Double, Double)]): Double = {
+    val correctCount = data.filter(y => y._1 == y._2).count()
+    val count = data.count()
+    correctCount.toDouble / count
+  }
+
+  /**
+   * Calculates the mean squared error for regression.
+   */
+  private def meanSquaredError(data: RDD[(Double, Double)]): Double = {
+    data.map { y =>
+      val err = y._1 - y._2
+      err * err
+    }.mean()
+  }
+
 
   /**
    * Get the number of nodes in tree below this node, including leaf nodes.

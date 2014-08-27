@@ -63,7 +63,14 @@ class DecisionTree (private val strategy: Strategy) extends Serializable with Lo
     timer.start("init")
 
     val retaggedInput = input.retag(classOf[LabeledPoint])
-    val metadata = DecisionTreeMetadata.buildMetadata(retaggedInput, strategy)
+
+    // Split data into training and validation.
+    val dataSplits = retaggedInput.randomSplit(
+      Array(1-strategy.pruneSize, strategy.pruneSize))
+    val training = dataSplits(0).cache
+    val validation = dataSplits(1).cache
+
+    val metadata = DecisionTreeMetadata.buildMetadata(training, strategy)
     logDebug("algo = " + strategy.algo)
 
     // Find the splits and the corresponding bins (interval between the splits) using a sample
@@ -179,6 +186,14 @@ class DecisionTree (private val strategy: Strategy) extends Serializable with Lo
 
     logInfo("Internal timing for DecisionTree:")
     logInfo(s"$timer")
+
+    // post prune decision tree
+    timer.start("prune")
+    val predictWithLabel = validation.map {point =>
+      (topNode.predict(point.features), point.label)
+    }
+    topNode.prune(predictWithLabel, strategy.algo == Classification, strategy.pruneThreshold)
+    timer.stop("prune")
 
     new DecisionTreeModel(topNode, strategy.algo)
   }
