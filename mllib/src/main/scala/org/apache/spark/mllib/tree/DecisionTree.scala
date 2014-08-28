@@ -79,7 +79,6 @@ class DecisionTree (private val strategy: Strategy) extends Serializable with Lo
     val treeInput = TreePoint.convertToTreeRDD(retaggedInput, bins, metadata)
       .persist(StorageLevel.MEMORY_AND_DISK)
 
-    val numFeatures = metadata.numFeatures
     // depth of the decision tree
     val maxDepth = strategy.maxDepth
     // the max number of nodes possible given the depth of the tree
@@ -211,7 +210,8 @@ class DecisionTree (private val strategy: Strategy) extends Serializable with Lo
       nodeSplitStats: (Split, InformationGainStats, Predict),
       parentImpurities: Array[Double]): Unit = {
 
-    if (level >= maxDepth) {
+    if (level >= maxDepth ||
+        nodeSplitStats._2.gain < 0) {
       return
     }
 
@@ -840,6 +840,11 @@ object DecisionTree extends Serializable with Logging {
         val leftTotalCount = leftNodeAgg.sum
         val rightTotalCount = rightNodeAgg.sum
 
+        if ((leftTotalCount < metadata.minInstancesPerNode) ||
+            (rightTotalCount < metadata.minInstancesPerNode)) {
+          return new InformationGainStats(Double.MinValue, -1.0, -1.0, -1.0)
+        }
+
         val impurity = {
           if (level > 0) {
             topImpurity
@@ -858,7 +863,7 @@ object DecisionTree extends Serializable with Logging {
         val totalCount = leftTotalCount + rightTotalCount
         if (totalCount == 0) {
           // Return arbitrary prediction.
-          return new InformationGainStats(0, topImpurity, topImpurity, topImpurity)
+          return InformationGainStats.invalidInformationGainStats
         }
 
         val leftImpurity = if (leftTotalCount == 0) {
@@ -876,6 +881,9 @@ object DecisionTree extends Serializable with Logging {
         val rightWeight = rightTotalCount / totalCount
 
         val gain = impurity - leftWeight * leftImpurity - rightWeight * rightImpurity
+        if (gain < metadata.minInfoGain) {
+          return InformationGainStats.invalidInformationGainStats
+        }
 
         new InformationGainStats(gain, impurity, leftImpurity, rightImpurity)
 
@@ -889,6 +897,11 @@ object DecisionTree extends Serializable with Logging {
         val rightCount = rightNodeAgg(0)
         val rightSum = rightNodeAgg(1)
         val rightSumSquares = rightNodeAgg(2)
+
+        if ((leftCount < metadata.minInstancesPerNode) ||
+          (rightCount < metadata.minInstancesPerNode)) {
+          return InformationGainStats.invalidInformationGainStats
+        }
 
         val impurity = {
           if (level > 0) {
@@ -917,6 +930,10 @@ object DecisionTree extends Serializable with Logging {
         val rightWeight = rightCount.toDouble / (leftCount + rightCount)
 
         val gain = impurity - leftWeight * leftImpurity - rightWeight * rightImpurity
+
+        if (gain < metadata.minInfoGain) {
+          return InformationGainStats.invalidInformationGainStats
+        }
 
         new InformationGainStats(gain, impurity, leftImpurity, rightImpurity)
       }
@@ -1193,7 +1210,7 @@ object DecisionTree extends Serializable with Logging {
         // Initialize with infeasible values.
         var bestFeatureIndex = Int.MinValue
         var bestSplitIndex = Int.MinValue
-        var bestGainStats = new InformationGainStats(Double.MinValue, -1.0, -1.0, -1.0)
+        var bestGainStats = InformationGainStats.invalidInformationGainStats
         // Iterate over features.
         var featureIndex = 0
         while (featureIndex < numFeatures) {
@@ -1212,6 +1229,11 @@ object DecisionTree extends Serializable with Logging {
           featureIndex += 1
         }
         (bestFeatureIndex, bestSplitIndex, bestGainStats)
+      }
+
+      if (gainStats == InformationGainStats.invalidInformationGainStats) {
+        logDebug("don't find any split that satisfy min instances per node or min info gain requirements")
+        return (Split.noSplit, gainStats, predict)
       }
 
       logDebug("best split = " + splits(bestFeatureIndex)(bestSplitIndex))
