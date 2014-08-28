@@ -1232,7 +1232,9 @@ object DecisionTree extends Serializable with Logging {
       }
 
       if (gainStats == InformationGainStats.invalidInformationGainStats) {
-        logDebug("don't find any split that satisfy min instances per node or min info gain requirements")
+        logDebug(
+          """don't find any split that satisfy min instances per
+            | node or min info gain requirements""")
         return (Split.noSplit, gainStats, predict)
       }
 
