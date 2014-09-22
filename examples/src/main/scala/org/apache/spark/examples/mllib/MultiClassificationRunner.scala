@@ -78,7 +78,8 @@ object MultiClassificationRunner {
     val stepSize = 1.0
     val regParam = 1.0
     val miniBatchFraction = 1.0
-    val baseClassifier = new LogisticRegressionWithSGD(stepSize, numIterations, regParam, miniBatchFraction)
+    val baseClassifier = new LogisticRegressionWithSGD(stepSize, numIterations,
+      regParam, miniBatchFraction)
 
     val model = new MultiClassification(baseClassifier, 3).run(input)
     val result = input.map(p => {
