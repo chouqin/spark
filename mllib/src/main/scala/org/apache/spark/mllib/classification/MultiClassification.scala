@@ -17,7 +17,7 @@
 
 package org.apache.spark.mllib.classification
 
-import org.apache.spark.mllib.regression.{LabeledPoint, GeneralizedLinearAlgorithm}
+import org.apache.spark.mllib.regression.{GeneralizedLinearModel, LabeledPoint, GeneralizedLinearAlgorithm}
 import org.apache.spark.rdd.RDD
 import org.apache.spark.mllib.linalg.Vector
 import scala.reflect.ClassTag
@@ -36,7 +36,7 @@ class MultiClassficiationModel[M<: ClassificationWithProbModel]
   }
 }
 
-class MultiClassification[M<: ClassificationWithProbModel: ClassTag] (
+class MultiClassification[M<: GeneralizedLinearModel with ClassificationWithProbModel: ClassTag] (
     val baseClassifier: GeneralizedLinearAlgorithm[M],
     val numClasses: Int) extends Serializable{
   def run(input: RDD[LabeledPoint]): MultiClassficiationModel[M] = {
