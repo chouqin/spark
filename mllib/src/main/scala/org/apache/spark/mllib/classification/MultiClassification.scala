@@ -23,7 +23,7 @@ import org.apache.spark.mllib.linalg.Vector
 import scala.reflect.ClassTag
 
 class MultiClassficiationModel[M<: ClassificationWithProbModel]
-(val baseEstimators: Array[M]) {
+    (val baseEstimators: Array[M]) extends Serializable{
   def predict(x: Vector): Int = {
     val probs = predictProb(x)
     probs.zipWithIndex.maxBy(_._1)._2
