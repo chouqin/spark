@@ -33,7 +33,7 @@ import org.apache.spark.rdd.RDD
 class LogisticRegressionModel (
     override val weights: Vector,
     override val intercept: Double)
-  extends GeneralizedLinearModel(weights, intercept) with ClassificationModel with Serializable {
+  extends GeneralizedLinearModel(weights, intercept) with ClassificationWithProbModel with Serializable {
 
   private var threshold: Option[Double] = Some(0.5)
 
@@ -59,6 +59,11 @@ class LogisticRegressionModel (
     this
   }
 
+  def predictProb(testData: Vector): Double = {
+    clearThreshold()
+    predict(testData)
+  }
+
   override protected def predictPoint(dataMatrix: Vector, weightMatrix: Vector,
       intercept: Double) = {
     val margin = weightMatrix.toBreeze.dot(dataMatrix.toBreeze) + intercept
@@ -76,7 +81,7 @@ class LogisticRegressionModel (
  *
  * Using [[LogisticRegressionWithLBFGS]] is recommended over this.
  */
-class LogisticRegressionWithSGD private (
+class LogisticRegressionWithSGD (
     private var stepSize: Double,
     private var numIterations: Int,
     private var regParam: Double,

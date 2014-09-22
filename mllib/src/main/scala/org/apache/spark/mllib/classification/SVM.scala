@@ -33,7 +33,7 @@ import org.apache.spark.rdd.RDD
 class SVMModel (
     override val weights: Vector,
     override val intercept: Double)
-  extends GeneralizedLinearModel(weights, intercept) with ClassificationModel with Serializable {
+  extends GeneralizedLinearModel(weights, intercept) with ClassificationWithProbModel with Serializable {
 
   private var threshold: Option[Double] = Some(0.0)
 
@@ -59,6 +59,11 @@ class SVMModel (
     this
   }
 
+  def predictProb(testData: Vector): Double = {
+    clearThreshold()
+    predict(testData)
+  }
+
   override protected def predictPoint(
       dataMatrix: Vector,
       weightMatrix: Vector,
@@ -75,7 +80,7 @@ class SVMModel (
  * Train a Support Vector Machine (SVM) using Stochastic Gradient Descent.
  * NOTE: Labels used in SVM should be {0, 1}.
  */
-class SVMWithSGD private (
+class SVMWithSGD (
     private var stepSize: Double,
     private var numIterations: Int,
     private var regParam: Double,

@@ -53,3 +53,7 @@ trait ClassificationModel extends Serializable {
   def predict(testData: JavaRDD[Vector]): JavaRDD[java.lang.Double] =
     predict(testData.rdd).toJavaRDD().asInstanceOf[JavaRDD[java.lang.Double]]
 }
+
+trait ClassificationWithProbModel extends ClassificationModel with Serializable {
+  def predictProb(testData: Vector): Double
+}
