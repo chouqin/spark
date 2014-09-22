@@ -31,7 +31,8 @@ import org.apache.spark.mllib.regression.GeneralizedLinearModel
 @Experimental
 abstract class ClassificationModel(
     override val weights: Vector,
-    override val intercept: Double) extends GeneralizedLinearModel(weights, intercept) with Serializable {
+    override val intercept: Double)
+  extends GeneralizedLinearModel(weights, intercept) with Serializable {
 
   protected var threshold: Option[Double] = Some(0.5)
 
