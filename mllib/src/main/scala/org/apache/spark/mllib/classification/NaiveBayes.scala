@@ -24,6 +24,7 @@ import org.apache.spark.SparkContext._
 import org.apache.spark.mllib.linalg.{DenseVector, SparseVector, Vector}
 import org.apache.spark.mllib.regression.LabeledPoint
 import org.apache.spark.rdd.RDD
+import org.apache.spark.api.java.JavaRDD
 
 /**
  * Model for Naive Bayes Classifiers.
@@ -65,6 +66,9 @@ class NaiveBayesModel private[mllib] (
   def predict(testData: Vector): Double = {
     labels(brzArgmax(brzPi + brzTheta * testData.toBreeze))
   }
+
+  def predict(testData: JavaRDD[Vector]): JavaRDD[java.lang.Double] =
+    predict(testData.rdd).toJavaRDD().asInstanceOf[JavaRDD[java.lang.Double]]
 }
 
 /**
