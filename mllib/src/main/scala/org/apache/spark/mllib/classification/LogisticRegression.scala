@@ -33,31 +33,7 @@ import org.apache.spark.rdd.RDD
 class LogisticRegressionModel (
     override val weights: Vector,
     override val intercept: Double)
-  extends GeneralizedLinearModel(weights, intercept) with ClassificationModel with Serializable {
-
-  private var threshold: Option[Double] = Some(0.5)
-
-  /**
-   * :: Experimental ::
-   * Sets the threshold that separates positive predictions from negative predictions. An example
-   * with prediction score greater than or equal to this threshold is identified as an positive,
-   * and negative otherwise. The default value is 0.5.
-   */
-  @Experimental
-  def setThreshold(threshold: Double): this.type = {
-    this.threshold = Some(threshold)
-    this
-  }
-
-  /**
-   * :: Experimental ::
-   * Clears the threshold so that `predict` will output raw prediction scores.
-   */
-  @Experimental
-  def clearThreshold(): this.type = {
-    threshold = None
-    this
-  }
+  extends ClassificationModel(weights, intercept) with Serializable {
 
   override protected def predictPoint(dataMatrix: Vector, weightMatrix: Vector,
       intercept: Double) = {
@@ -76,7 +52,7 @@ class LogisticRegressionModel (
  *
  * Using [[LogisticRegressionWithLBFGS]] is recommended over this.
  */
-class LogisticRegressionWithSGD private (
+class LogisticRegressionWithSGD (
     private var stepSize: Double,
     private var numIterations: Int,
     private var regParam: Double,
