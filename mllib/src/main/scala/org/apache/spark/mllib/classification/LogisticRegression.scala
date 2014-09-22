@@ -33,7 +33,8 @@ import org.apache.spark.rdd.RDD
 class LogisticRegressionModel (
     override val weights: Vector,
     override val intercept: Double)
-  extends GeneralizedLinearModel(weights, intercept) with ClassificationWithProbModel with Serializable {
+  extends GeneralizedLinearModel(weights, intercept)
+  with ClassificationWithProbModel with Serializable {
 
   private var threshold: Option[Double] = Some(0.5)
 
