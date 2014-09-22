@@ -47,7 +47,7 @@ object MultiClassificationRunner {
 
     runMultiSVM(input)
 
-    runMultiLR(input)
+//    runMultiLR(input)
 
   }
 

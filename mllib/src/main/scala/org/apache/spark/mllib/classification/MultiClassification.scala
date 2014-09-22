@@ -31,7 +31,7 @@ class MultiClassficiationModel[M<: ClassificationWithProbModel]
 
   def predictProb(x: Vector): Array[Double] = {
     baseEstimators.map { e =>
-      e.predict(x)
+      e.predictProb(x)
     }
   }
 }
