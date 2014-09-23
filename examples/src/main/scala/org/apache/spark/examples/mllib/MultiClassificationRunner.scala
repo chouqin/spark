@@ -24,20 +24,6 @@ import org.apache.spark.mllib.linalg.DenseVector
 import org.apache.spark.mllib.classification.{LogisticRegressionWithSGD, MultiClassification, SVMWithSGD}
 
 object MultiClassificationRunner {
-  def loadIrisData(sc: SparkContext, filename:String): RDD[LabeledPoint] = {
-    val nameToLabels = Map[String, Double](
-      "Iris-setosa" -> 0.0,
-      "Iris-versicolor" -> 1.0,
-      "Iris-virginica" -> 2.0
-    )
-    sc.textFile(filename).map(line => {
-      val items = line.split(",")
-      val label = nameToLabels(items.last)
-      val features = new DenseVector(items.slice(0, items.length-1).map(_.toDouble))
-      new LabeledPoint(label, features)
-    })
-  }
-
   def main(args: Array[String]) {
     val filename = args(0)
     val conf = new SparkConf().setAppName("MultiClassificationRunner")
@@ -47,16 +33,36 @@ object MultiClassificationRunner {
 
     runMultiSVM(input)
 
-//    runMultiLR(input)
+    runMultiLR(input)
 
+  }
+
+  // 加载Iris DataSet作为数据
+  def loadIrisData(sc: SparkContext, filename:String): RDD[LabeledPoint] = {
+
+    // 从类型名到label的对应
+    val nameToLabels = Map[String, Double](
+      "Iris-setosa" -> 0.0,
+      "Iris-versicolor" -> 1.0,
+      "Iris-virginica" -> 2.0
+    )
+    sc.textFile(filename).map(line => {
+      val items = line.split(",")
+      // 最后一项是label，前面的是features
+      val label = nameToLabels(items.last)
+      val features = new DenseVector(items.slice(0, items.length-1).map(_.toDouble))
+      new LabeledPoint(label, features)
+    })
   }
 
   // 训练以SVM为基础的多分类器
   def runMultiSVM(input: RDD[LabeledPoint]) {
+    // 算法的参数，需要调节
     val numIterations = 100
     val stepSize = 1.0
     val regParam = 1.0
     val miniBatchFraction = 1.0
+    // 构建基础分类器
     val baseClassifier = new SVMWithSGD(stepSize, numIterations, regParam, miniBatchFraction)
 
     val model = new MultiClassification(baseClassifier, 3).run(input)
@@ -74,10 +80,13 @@ object MultiClassificationRunner {
 
   // 训练以LR为基础的多分类器
   def runMultiLR(input: RDD[LabeledPoint]) {
+
+    // 算法的参数，需要调节
     val numIterations = 100
     val stepSize = 1.0
     val regParam = 1.0
     val miniBatchFraction = 1.0
+    // 构建基础分类器
     val baseClassifier = new LogisticRegressionWithSGD(stepSize, numIterations,
       regParam, miniBatchFraction)
 
