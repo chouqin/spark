@@ -29,12 +29,15 @@ object MultiClassificationRunner {
     val conf = new SparkConf().setAppName("MultiClassificationRunner")
     val sc = new SparkContext(conf)
 
-    val input = loadIrisData(sc, filename)
+//    val input = loadIrisData(sc, filename)
 
-    runMultiSVM(input)
+//    runMultiSVM(input)
+//
+//    runMultiLR(input)
 
-    runMultiLR(input)
 
+    val binaryInput = loadBinaryIrisData(sc, filename)
+    runSVM(binaryInput)
   }
 
   // 加载Iris DataSet作为数据
@@ -54,6 +57,46 @@ object MultiClassificationRunner {
       new LabeledPoint(label, features)
     })
   }
+
+  // 加载label为Iris-versicolor和Iris-virginica的数据集，测试二分类器
+  def loadBinaryIrisData(sc: SparkContext, filename:String): RDD[LabeledPoint] = {
+
+    // 从类型名到label的对应
+    val nameToLabels = Map[String, Double](
+      "Iris-setosa" -> 2.0,
+      "Iris-versicolor" -> 1.0,
+      "Iris-virginica" -> 0.0
+    )
+    sc.textFile(filename).map(line => {
+      val items = line.split(",")
+      // 最后一项是label，前面的是features
+      val label = nameToLabels(items.last)
+      val features = new DenseVector(items.slice(0, items.length-1).map(_.toDouble))
+      new LabeledPoint(label, features)
+    }).filter(_.label != 2.0)
+  }
+
+  def runSVM(input: RDD[LabeledPoint]) {
+    // 算法的参数，需要调节
+    val numIterations = 100
+    val stepSize = 1.0
+    val regParam = 1.0
+    val miniBatchFraction = 1.0
+    // 构建基础分类器
+    val baseClassifier = new SVMWithSGD(stepSize, numIterations, regParam, miniBatchFraction)
+    val model = baseClassifier.run(input)
+    val result = input.map(p => {
+      (p.label, model.predict(p.features))
+    }).collect()
+
+    result.foreach(t => {
+      println(t._1, t._2)
+    })
+
+    val error = result.filter(t => t._1 != t._2).length
+    println(error, result.length)
+  }
+
 
   // 训练以SVM为基础的多分类器
   def runMultiSVM(input: RDD[LabeledPoint]) {
