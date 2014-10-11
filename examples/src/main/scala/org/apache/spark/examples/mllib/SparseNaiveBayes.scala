@@ -21,13 +21,13 @@ import org.apache.log4j.{Level, Logger}
 import scopt.OptionParser
 
 import org.apache.spark.{SparkConf, SparkContext}
-import org.apache.spark.mllib.classification.NaiveBayes
-import org.apache.spark.mllib.util.MLUtils
+import org.apache.spark.mllib2.classification.NaiveBayes
+import org.apache.spark.mllib2.util.MLUtils
 
 /**
  * An example naive Bayes app. Run with
  * {{{
- * ./bin/run-example org.apache.spark.examples.mllib.SparseNaiveBayes [options] <input>
+ * ./bin/run-example org.apache.spark.examples.mllib2.SparseNaiveBayes [options] <input>
  * }}}
  * If you use it as a template to create your own app, please use `spark-submit` to submit your app.
  */

@@ -24,10 +24,10 @@ import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.JavaSparkContext;
 import org.apache.spark.api.java.function.Function;
 
-import org.apache.spark.mllib.clustering.KMeans;
-import org.apache.spark.mllib.clustering.KMeansModel;
-import org.apache.spark.mllib.linalg.Vector;
-import org.apache.spark.mllib.linalg.Vectors;
+import org.apache.spark.mllib2.clustering.KMeans;
+import org.apache.spark.mllib2.clustering.KMeansModel;
+import org.apache.spark.mllib2.linalg.Vector;
+import org.apache.spark.mllib2.linalg.Vectors;
 
 /**
  * Example using MLLib KMeans from Java.

@@ -27,7 +27,7 @@ import cern.jet.math._
  * Alternating least squares matrix factorization.
  *
  * This is an example implementation for learning how to use Spark. For more conventional use,
- * please refer to org.apache.spark.mllib.recommendation.ALS
+ * please refer to org.apache.spark.mllib2.recommendation.ALS
  */
 object LocalALS {
   // Parameters set through command line arguments
@@ -113,7 +113,7 @@ object LocalALS {
   def showWarning() {
     System.err.println(
       """WARN: This is a naive implementation of ALS and is given as an example!
-        |Please use the ALS method found in org.apache.spark.mllib.recommendation
+        |Please use the ALS method found in org.apache.spark.mllib2.recommendation
         |for more conventional use.
       """.stripMargin)
   }

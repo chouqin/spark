@@ -22,9 +22,9 @@ import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.JavaSparkContext;
 import org.apache.spark.api.java.function.Function;
 
-import org.apache.spark.mllib.recommendation.ALS;
-import org.apache.spark.mllib.recommendation.MatrixFactorizationModel;
-import org.apache.spark.mllib.recommendation.Rating;
+import org.apache.spark.mllib2.recommendation.ALS;
+import org.apache.spark.mllib2.recommendation.MatrixFactorizationModel;
+import org.apache.spark.mllib2.recommendation.Rating;
 
 import java.util.Arrays;
 import java.util.regex.Pattern;

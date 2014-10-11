@@ -25,7 +25,7 @@ import scopt.OptionParser
 
 import org.apache.spark.{SparkConf, SparkContext}
 import org.apache.spark.SparkContext._
-import org.apache.spark.mllib.recommendation.{ALS, MatrixFactorizationModel, Rating}
+import org.apache.spark.mllib2.recommendation.{ALS, MatrixFactorizationModel, Rating}
 import org.apache.spark.rdd.RDD
 import org.apache.spark.serializer.{KryoSerializer, KryoRegistrator}
 
@@ -33,9 +33,9 @@ import org.apache.spark.serializer.{KryoSerializer, KryoRegistrator}
  * An example app for ALS on MovieLens data (http://grouplens.org/datasets/movielens/).
  * Run with
  * {{{
- * bin/run-example org.apache.spark.examples.mllib.MovieLensALS
+ * bin/run-example org.apache.spark.examples.mllib2.MovieLensALS
  * }}}
- * A synthetic dataset in MovieLens format can be found at `data/mllib/sample_movielens_data.txt`.
+ * A synthetic dataset in MovieLens format can be found at `data/mllib2/sample_movielens_data.txt`.
  * If you use it as a template to create your own app, please use `spark-submit` to submit your app.
  */
 object MovieLensALS {
@@ -91,10 +91,10 @@ object MovieLensALS {
         """
           |For example, the following command runs this app on a synthetic dataset:
           |
-          | bin/spark-submit --class org.apache.spark.examples.mllib.MovieLensALS \
+          | bin/spark-submit --class org.apache.spark.examples.mllib2.MovieLensALS \
           |  examples/target/scala-*/spark-examples-*.jar \
           |  --rank 5 --numIterations 20 --lambda 1.0 --kryo \
-          |  data/mllib/sample_movielens_data.txt
+          |  data/mllib2/sample_movielens_data.txt
         """.stripMargin)
     }
 

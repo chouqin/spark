@@ -51,16 +51,16 @@ We refer users to the [Stanford NLP Group](http://nlp.stanford.edu/) and
 <div class="codetabs">
 <div data-lang="scala" markdown="1">
 
-TF and IDF are implemented in [HashingTF](api/scala/index.html#org.apache.spark.mllib.feature.HashingTF)
-and [IDF](api/scala/index.html#org.apache.spark.mllib.feature.IDF).
+TF and IDF are implemented in [HashingTF](api/scala/index.html#org.apache.spark.mllib2.feature.HashingTF)
+and [IDF](api/scala/index.html#org.apache.spark.mllib2.feature.IDF).
 `HashingTF` takes an `RDD[Iterable[_]]` as the input.
 Each record could be an iterable of strings or other types.
 
 {% highlight scala %}
 import org.apache.spark.rdd.RDD
 import org.apache.spark.SparkContext
-import org.apache.spark.mllib.feature.HashingTF
-import org.apache.spark.mllib.linalg.Vector
+import org.apache.spark.mllib2.feature.HashingTF
+import org.apache.spark.mllib2.linalg.Vector
 
 val sc: SparkContext = ...
 
@@ -75,7 +75,7 @@ While applying `HashingTF` only needs a single pass to the data, applying `IDF` 
 first to compute the IDF vector and second to scale the term frequencies by IDF.
 
 {% highlight scala %}
-import org.apache.spark.mllib.feature.IDF
+import org.apache.spark.mllib2.feature.IDF
 
 // ... continue from the previous example
 tf.cache()
@@ -132,7 +132,7 @@ Here we assume the extracted file is `text8` and in same directory as you run th
 import org.apache.spark._
 import org.apache.spark.rdd._
 import org.apache.spark.SparkContext._
-import org.apache.spark.mllib.feature.Word2Vec
+import org.apache.spark.mllib2.feature.Word2Vec
 
 val input = sc.textFile("text8").map(line => line.split(" ").toSeq)
 
@@ -162,19 +162,19 @@ against features with very large variances exerting an overly large influence du
 
 ### Model Fitting
 
-[`StandardScaler`](api/scala/index.html#org.apache.spark.mllib.feature.StandardScaler) has the
+[`StandardScaler`](api/scala/index.html#org.apache.spark.mllib2.feature.StandardScaler) has the
 following parameters in the constructor:
 
 * `withMean` False by default. Centers the data with mean before scaling. It will build a dense
 output, so this does not work on sparse input and will raise an exception.
 * `withStd` True by default. Scales the data to unit variance.
 
-We provide a [`fit`](api/scala/index.html#org.apache.spark.mllib.feature.StandardScaler) method in
+We provide a [`fit`](api/scala/index.html#org.apache.spark.mllib2.feature.StandardScaler) method in
 `StandardScaler` which can take an input of `RDD[Vector]`, learn the summary statistics, and then
 return a model which can transform the input dataset into unit variance and/or zero mean features
 depending how we configure the `StandardScaler`.
 
-This model implements [`VectorTransformer`](api/scala/index.html#org.apache.spark.mllib.feature.VectorTransformer)
+This model implements [`VectorTransformer`](api/scala/index.html#org.apache.spark.mllib2.feature.VectorTransformer)
 which can apply the standardization on a `Vector` to produce a transformed `Vector` or on
 an `RDD[Vector]` to produce a transformed `RDD[Vector]`.
 
@@ -190,9 +190,9 @@ so that the new features have unit variance and/or zero mean.
 <div data-lang="scala">
 {% highlight scala %}
 import org.apache.spark.SparkContext._
-import org.apache.spark.mllib.feature.StandardScaler
-import org.apache.spark.mllib.linalg.Vectors
-import org.apache.spark.mllib.util.MLUtils
+import org.apache.spark.mllib2.feature.StandardScaler
+import org.apache.spark.mllib2.linalg.Vectors
+import org.apache.spark.mllib2.util.MLUtils
 
 val data = MLUtils.loadLibSVMFile(sc, "data/mllib/sample_libsvm_data.txt")
 
@@ -216,12 +216,12 @@ Normalizer scales individual samples to have unit $L^p$ norm. This is a common o
 classification or clustering. For example, the dot product of two $L^2$ normalized TF-IDF vectors
 is the cosine similarity of the vectors.
 
-[`Normalizer`](api/scala/index.html#org.apache.spark.mllib.feature.Normalizer) has the following
+[`Normalizer`](api/scala/index.html#org.apache.spark.mllib2.feature.Normalizer) has the following
 parameter in the constructor:
 
 * `p` Normalization in $L^p$ space, $p = 2$ by default.
 
-`Normalizer` implements [`VectorTransformer`](api/scala/index.html#org.apache.spark.mllib.feature.VectorTransformer)
+`Normalizer` implements [`VectorTransformer`](api/scala/index.html#org.apache.spark.mllib2.feature.VectorTransformer)
 which can apply the normalization on a `Vector` to produce a transformed `Vector` or on
 an `RDD[Vector]` to produce a transformed `RDD[Vector]`.
 
@@ -236,9 +236,9 @@ with $L^2$ norm, and $L^\infty$ norm.
 <div data-lang="scala">
 {% highlight scala %}
 import org.apache.spark.SparkContext._
-import org.apache.spark.mllib.feature.Normalizer
-import org.apache.spark.mllib.linalg.Vectors
-import org.apache.spark.mllib.util.MLUtils
+import org.apache.spark.mllib2.feature.Normalizer
+import org.apache.spark.mllib2.linalg.Vectors
+import org.apache.spark.mllib2.util.MLUtils
 
 val data = MLUtils.loadLibSVMFile(sc, "data/mllib/sample_libsvm_data.txt")
 

@@ -21,18 +21,18 @@ import scopt.OptionParser
 
 import org.apache.spark.{SparkConf, SparkContext}
 import org.apache.spark.SparkContext._
-import org.apache.spark.mllib.regression.LabeledPoint
-import org.apache.spark.mllib.tree.{DecisionTree, impurity}
-import org.apache.spark.mllib.tree.configuration.{Algo, Strategy}
-import org.apache.spark.mllib.tree.configuration.Algo._
-import org.apache.spark.mllib.tree.model.DecisionTreeModel
-import org.apache.spark.mllib.util.MLUtils
+import org.apache.spark.mllib2.regression.LabeledPoint
+import org.apache.spark.mllib2.tree.{DecisionTree, impurity}
+import org.apache.spark.mllib2.tree.configuration.{Algo, Strategy}
+import org.apache.spark.mllib2.tree.configuration.Algo._
+import org.apache.spark.mllib2.tree.model.DecisionTreeModel
+import org.apache.spark.mllib2.util.MLUtils
 import org.apache.spark.rdd.RDD
 
 /**
  * An example runner for decision tree. Run with
  * {{{
- * ./bin/run-example org.apache.spark.examples.mllib.DecisionTreeRunner [options]
+ * ./bin/run-example org.apache.spark.examples.mllib2.DecisionTreeRunner [options]
  * }}}
  * If you use it as a template to create your own app, please use `spark-submit` to submit your app.
  *

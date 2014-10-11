@@ -21,13 +21,13 @@ import org.apache.log4j.{Level, Logger}
 import scopt.OptionParser
 
 import org.apache.spark.{SparkConf, SparkContext}
-import org.apache.spark.mllib.clustering.KMeans
-import org.apache.spark.mllib.linalg.Vectors
+import org.apache.spark.mllib2.clustering.KMeans
+import org.apache.spark.mllib2.linalg.Vectors
 
 /**
  * An example k-means app. Run with
  * {{{
- * ./bin/run-example org.apache.spark.examples.mllib.DenseKMeans [options] <input>
+ * ./bin/run-example org.apache.spark.examples.mllib2.DenseKMeans [options] <input>
  * }}}
  * If you use it as a template to create your own app, please use `spark-submit` to submit your app.
  */

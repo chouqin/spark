@@ -38,8 +38,8 @@ object MimaExcludes {
             MimaBuild.excludeSparkPackage("deploy"),
             MimaBuild.excludeSparkPackage("graphx")
           ) ++
-          MimaBuild.excludeSparkClass("mllib.linalg.Matrix") ++
-          MimaBuild.excludeSparkClass("mllib.linalg.Vector")
+          MimaBuild.excludeSparkClass("mllib2.linalg.Matrix") ++
+          MimaBuild.excludeSparkClass("mllib2.linalg.Vector")
 
         case v if v.startsWith("1.1") =>
           Seq(
@@ -104,15 +104,15 @@ object MimaExcludes {
           ) ++
           Seq( // Ignore some private methods in ALS.
             ProblemFilters.exclude[MissingMethodProblem](
-              "org.apache.spark.mllib.recommendation.ALS.org$apache$spark$mllib$recommendation$ALS$^dateFeatures"),
+              "org.apache.spark.mllib2.recommendation.ALS.org$apache$spark$mllib2$recommendation$ALS$^dateFeatures"),
             ProblemFilters.exclude[MissingMethodProblem]( // The only public constructor is the one without arguments.
-              "org.apache.spark.mllib.recommendation.ALS.this"),
+              "org.apache.spark.mllib2.recommendation.ALS.this"),
             ProblemFilters.exclude[MissingMethodProblem](
-              "org.apache.spark.mllib.recommendation.ALS.org$apache$spark$mllib$recommendation$ALS$$<init>$default$7"),
+              "org.apache.spark.mllib2.recommendation.ALS.org$apache$spark$mllib2$recommendation$ALS$$<init>$default$7"),
             ProblemFilters.exclude[IncompatibleMethTypeProblem](
-              "org.apache.spark.mllib.recommendation.ALS.org$apache$spark$mllib$recommendation$ALS$^dateFeatures")
+              "org.apache.spark.mllib2.recommendation.ALS.org$apache$spark$mllib2$recommendation$ALS$^dateFeatures")
           ) ++
-          MimaBuild.excludeSparkClass("mllib.linalg.distributed.ColumnStatisticsAggregator") ++
+          MimaBuild.excludeSparkClass("mllib2.linalg.distributed.ColumnStatisticsAggregator") ++
           MimaBuild.excludeSparkClass("rdd.ZippedRDD") ++
           MimaBuild.excludeSparkClass("rdd.ZippedPartition") ++
           MimaBuild.excludeSparkClass("util.SerializableHyperLogLog") ++
@@ -123,31 +123,31 @@ object MimaExcludes {
           MimaBuild.excludeSparkClass("scheduler.SparkListenerApplicationStart") ++
           Seq(
             ProblemFilters.exclude[IncompatibleMethTypeProblem](
-              "org.apache.spark.mllib.tree.impurity.Gini.calculate"),
+              "org.apache.spark.mllib2.tree.impurity.Gini.calculate"),
             ProblemFilters.exclude[IncompatibleMethTypeProblem](
-              "org.apache.spark.mllib.tree.impurity.Entropy.calculate"),
+              "org.apache.spark.mllib2.tree.impurity.Entropy.calculate"),
             ProblemFilters.exclude[IncompatibleMethTypeProblem](
-              "org.apache.spark.mllib.tree.impurity.Variance.calculate")
+              "org.apache.spark.mllib2.tree.impurity.Variance.calculate")
           ) ++
           Seq( // Package-private classes removed in SPARK-2341
-            ProblemFilters.exclude[MissingClassProblem]("org.apache.spark.mllib.util.BinaryLabelParser"),
-            ProblemFilters.exclude[MissingClassProblem]("org.apache.spark.mllib.util.BinaryLabelParser$"),
-            ProblemFilters.exclude[MissingClassProblem]("org.apache.spark.mllib.util.LabelParser"),
-            ProblemFilters.exclude[MissingClassProblem]("org.apache.spark.mllib.util.LabelParser$"),
-            ProblemFilters.exclude[MissingClassProblem]("org.apache.spark.mllib.util.MulticlassLabelParser"),
-            ProblemFilters.exclude[MissingClassProblem]("org.apache.spark.mllib.util.MulticlassLabelParser$")
+            ProblemFilters.exclude[MissingClassProblem]("org.apache.spark.mllib2.util.BinaryLabelParser"),
+            ProblemFilters.exclude[MissingClassProblem]("org.apache.spark.mllib2.util.BinaryLabelParser$"),
+            ProblemFilters.exclude[MissingClassProblem]("org.apache.spark.mllib2.util.LabelParser"),
+            ProblemFilters.exclude[MissingClassProblem]("org.apache.spark.mllib2.util.LabelParser$"),
+            ProblemFilters.exclude[MissingClassProblem]("org.apache.spark.mllib2.util.MulticlassLabelParser"),
+            ProblemFilters.exclude[MissingClassProblem]("org.apache.spark.mllib2.util.MulticlassLabelParser$")
           ) ++
           Seq( // package-private classes removed in MLlib
             ProblemFilters.exclude[MissingMethodProblem](
-              "org.apache.spark.mllib.regression.GeneralizedLinearAlgorithm.org$apache$spark$mllib$regression$GeneralizedLinearAlgorithm$$prependOne")
+              "org.apache.spark.mllib2.regression.GeneralizedLinearAlgorithm.org$apache$spark$mllib2$regression$GeneralizedLinearAlgorithm$$prependOne")
           ) ++
           Seq( // new Vector methods in MLlib (binary compatible assuming users do not implement Vector)
-            ProblemFilters.exclude[MissingMethodProblem]("org.apache.spark.mllib.linalg.Vector.copy")
+            ProblemFilters.exclude[MissingMethodProblem]("org.apache.spark.mllib2.linalg.Vector.copy")
           ) ++
           Seq( // synthetic methods generated in LabeledPoint
-            ProblemFilters.exclude[MissingTypesProblem]("org.apache.spark.mllib.regression.LabeledPoint$"),
-            ProblemFilters.exclude[IncompatibleMethTypeProblem]("org.apache.spark.mllib.regression.LabeledPoint.apply"),
-            ProblemFilters.exclude[MissingMethodProblem]("org.apache.spark.mllib.regression.LabeledPoint.toString")
+            ProblemFilters.exclude[MissingTypesProblem]("org.apache.spark.mllib2.regression.LabeledPoint$"),
+            ProblemFilters.exclude[IncompatibleMethTypeProblem]("org.apache.spark.mllib2.regression.LabeledPoint.apply"),
+            ProblemFilters.exclude[MissingMethodProblem]("org.apache.spark.mllib2.regression.LabeledPoint.toString")
           ) ++
           Seq ( // Scala 2.11 compatibility fix
             ProblemFilters.exclude[MissingMethodProblem]("org.apache.spark.streaming.StreamingContext.<init>$default$2")
@@ -155,7 +155,7 @@ object MimaExcludes {
         case v if v.startsWith("1.0") =>
           Seq(
             MimaBuild.excludeSparkPackage("api.java"),
-            MimaBuild.excludeSparkPackage("mllib"),
+            MimaBuild.excludeSparkPackage("mllib2"),
             MimaBuild.excludeSparkPackage("streaming")
           ) ++
           MimaBuild.excludeSparkClass("rdd.ClassTags") ++
@@ -166,11 +166,11 @@ object MimaExcludes {
           MimaBuild.excludeSparkClass("graphx.impl.RoutingTable") ++
           MimaBuild.excludeSparkClass("graphx.util.collection.PrimitiveKeyOpenHashMap") ++
           MimaBuild.excludeSparkClass("graphx.util.collection.GraphXPrimitiveKeyOpenHashMap") ++
-          MimaBuild.excludeSparkClass("mllib.recommendation.MFDataGenerator") ++
-          MimaBuild.excludeSparkClass("mllib.optimization.SquaredGradient") ++
-          MimaBuild.excludeSparkClass("mllib.regression.RidgeRegressionWithSGD") ++
-          MimaBuild.excludeSparkClass("mllib.regression.LassoWithSGD") ++
-          MimaBuild.excludeSparkClass("mllib.regression.LinearRegressionWithSGD")
+          MimaBuild.excludeSparkClass("mllib2.recommendation.MFDataGenerator") ++
+          MimaBuild.excludeSparkClass("mllib2.optimization.SquaredGradient") ++
+          MimaBuild.excludeSparkClass("mllib2.regression.RidgeRegressionWithSGD") ++
+          MimaBuild.excludeSparkClass("mllib2.regression.LassoWithSGD") ++
+          MimaBuild.excludeSparkClass("mllib2.regression.LinearRegressionWithSGD")
         case _ => Seq()
       }
 }

@@ -17,7 +17,7 @@
 
 package org.apache.spark.examples.mllib
 
-import org.apache.spark.mllib.util.MLUtils
+import org.apache.spark.mllib2.util.MLUtils
 import scopt.OptionParser
 
 import org.apache.spark.{SparkConf, SparkContext}
@@ -26,13 +26,13 @@ import org.apache.spark.SparkContext._
 /**
  * An example app for randomly generated and sampled RDDs. Run with
  * {{{
- * bin/run-example org.apache.spark.examples.mllib.SampledRDDs
+ * bin/run-example org.apache.spark.examples.mllib2.SampledRDDs
  * }}}
  * If you use it as a template to create your own app, please use `spark-submit` to submit your app.
  */
 object SampledRDDs {
 
-  case class Params(input: String = "data/mllib/sample_binary_classification_data.txt")
+  case class Params(input: String = "data/mllib2/sample_binary_classification_data.txt")
 
   def main(args: Array[String]) {
     val defaultParams = Params()
@@ -46,7 +46,7 @@ object SampledRDDs {
         """
         |For example, the following command runs this app:
         |
-        | bin/spark-submit --class org.apache.spark.examples.mllib.SampledRDDs \
+        | bin/spark-submit --class org.apache.spark.examples.mllib2.SampledRDDs \
         |  examples/target/scala-*/spark-examples-*.jar
         """.stripMargin)
     }

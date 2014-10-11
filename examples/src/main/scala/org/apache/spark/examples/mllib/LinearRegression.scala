@@ -21,16 +21,16 @@ import org.apache.log4j.{Level, Logger}
 import scopt.OptionParser
 
 import org.apache.spark.{SparkConf, SparkContext}
-import org.apache.spark.mllib.regression.LinearRegressionWithSGD
-import org.apache.spark.mllib.util.MLUtils
-import org.apache.spark.mllib.optimization.{SimpleUpdater, SquaredL2Updater, L1Updater}
+import org.apache.spark.mllib2.regression.LinearRegressionWithSGD
+import org.apache.spark.mllib2.util.MLUtils
+import org.apache.spark.mllib2.optimization.{SimpleUpdater, SquaredL2Updater, L1Updater}
 
 /**
  * An example app for linear regression. Run with
  * {{{
- * bin/run-example org.apache.spark.examples.mllib.LinearRegression
+ * bin/run-example org.apache.spark.examples.mllib2.LinearRegression
  * }}}
- * A synthetic dataset can be found at `data/mllib/sample_linear_regression_data.txt`.
+ * A synthetic dataset can be found at `data/mllib2/sample_linear_regression_data.txt`.
  * If you use it as a template to create your own app, please use `spark-submit` to submit your app.
  */
 object LinearRegression extends App {
@@ -73,9 +73,9 @@ object LinearRegression extends App {
       """
         |For example, the following command runs this app on a synthetic dataset:
         |
-        | bin/spark-submit --class org.apache.spark.examples.mllib.LinearRegression \
+        | bin/spark-submit --class org.apache.spark.examples.mllib2.LinearRegression \
         |  examples/target/scala-*/spark-examples-*.jar \
-        |  data/mllib/sample_linear_regression_data.txt
+        |  data/mllib2/sample_linear_regression_data.txt
       """.stripMargin)
   }
 

@@ -17,11 +17,11 @@
 
 package org.apache.spark.examples.mllib
 
-import org.apache.spark.mllib.regression.LabeledPoint
+import org.apache.spark.mllib2.regression.LabeledPoint
 import org.apache.spark.rdd.RDD
 import org.apache.spark.{SparkContext, SparkConf}
-import org.apache.spark.mllib.linalg.DenseVector
-import org.apache.spark.mllib.classification.{LogisticRegressionWithSGD, MultiClassification, SVMWithSGD}
+import org.apache.spark.mllib2.linalg.DenseVector
+import org.apache.spark.mllib2.classification.{LogisticRegressionWithSGD, MultiClassification, SVMWithSGD}
 
 object MultiClassificationRunner {
   def main(args: Array[String]) {

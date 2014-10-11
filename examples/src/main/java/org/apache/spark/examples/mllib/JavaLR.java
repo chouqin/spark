@@ -24,10 +24,10 @@ import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.JavaSparkContext;
 import org.apache.spark.api.java.function.Function;
 
-import org.apache.spark.mllib.classification.LogisticRegressionWithSGD;
-import org.apache.spark.mllib.classification.LogisticRegressionModel;
-import org.apache.spark.mllib.linalg.Vectors;
-import org.apache.spark.mllib.regression.LabeledPoint;
+import org.apache.spark.mllib2.classification.LogisticRegressionWithSGD;
+import org.apache.spark.mllib2.classification.LogisticRegressionModel;
+import org.apache.spark.mllib2.linalg.Vectors;
+import org.apache.spark.mllib2.regression.LabeledPoint;
 
 /**
  * Logistic regression based classification using ML Lib.
