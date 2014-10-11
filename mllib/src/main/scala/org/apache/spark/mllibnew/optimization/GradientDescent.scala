@@ -32,7 +32,8 @@ import org.apache.spark.mllibnew.rdd.RDDFunctions._
  * @param gradient Gradient function to be used.
  * @param updater Updater to be used to update weights after every iteration.
  */
-class GradientDescent private[mllibnew] (private var gradient: Gradient, private var updater: Updater)
+class GradientDescent private[mllibnew] (private var gradient: Gradient,
+                                         private var updater: Updater)
   extends Optimizer with Logging {
 
   private var stepSize: Double = 1.0
