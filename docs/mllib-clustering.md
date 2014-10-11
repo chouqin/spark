@@ -41,14 +41,14 @@ a given dataset, the algorithm returns the best clustering result).
 The following code snippets can be executed in `spark-shell`.
 
 In the following example after loading and parsing data, we use the
-[`KMeans`](api/scala/index.html#org.apache.spark.mllib2.clustering.KMeans) object to cluster the data
+[`KMeans`](api/scala/index.html#org.apache.spark.mllibnew.clustering.KMeans) object to cluster the data
 into two clusters. The number of desired clusters is passed to the algorithm. We then compute Within
 Set Sum of Squared Error (WSSSE). You can reduce this error measure by increasing *k*. In fact the
 optimal *k* is usually one where there is an "elbow" in the WSSSE graph.
 
 {% highlight scala %}
-import org.apache.spark.mllib2.clustering.KMeans
-import org.apache.spark.mllib2.linalg.Vectors
+import org.apache.spark.mllibnew.clustering.KMeans
+import org.apache.spark.mllibnew.linalg.Vectors
 
 // Load and parse the data
 val data = sc.textFile("data/mllib/kmeans_data.txt")
@@ -75,10 +75,10 @@ that is equivalent to the provided example in Scala is given below:
 {% highlight java %}
 import org.apache.spark.api.java.*;
 import org.apache.spark.api.java.function.Function;
-import org.apache.spark.mllib2.clustering.KMeans;
-import org.apache.spark.mllib2.clustering.KMeansModel;
-import org.apache.spark.mllib2.linalg.Vector;
-import org.apache.spark.mllib2.linalg.Vectors;
+import org.apache.spark.mllibnew.clustering.KMeans;
+import org.apache.spark.mllibnew.clustering.KMeansModel;
+import org.apache.spark.mllibnew.linalg.Vector;
+import org.apache.spark.mllibnew.linalg.Vectors;
 import org.apache.spark.SparkConf;
 
 public class KMeansExample {

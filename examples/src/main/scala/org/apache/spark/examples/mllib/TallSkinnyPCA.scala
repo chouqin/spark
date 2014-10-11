@@ -18,8 +18,8 @@
 package org.apache.spark.examples.mllib
 
 import org.apache.spark.{SparkConf, SparkContext}
-import org.apache.spark.mllib2.linalg.distributed.RowMatrix
-import org.apache.spark.mllib2.linalg.Vectors
+import org.apache.spark.mllibnew.linalg.distributed.RowMatrix
+import org.apache.spark.mllibnew.linalg.Vectors
 
 /**
  * Compute the principal components of a tall-and-skinny matrix, whose rows are observations.

@@ -27,10 +27,10 @@ import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.JavaSparkContext;
 import org.apache.spark.api.java.function.Function;
 import org.apache.spark.api.java.function.PairFunction;
-import org.apache.spark.mllib2.regression.LabeledPoint;
-import org.apache.spark.mllib2.tree.DecisionTree;
-import org.apache.spark.mllib2.tree.model.DecisionTreeModel;
-import org.apache.spark.mllib2.util.MLUtils;
+import org.apache.spark.mllibnew.regression.LabeledPoint;
+import org.apache.spark.mllibnew.tree.DecisionTree;
+import org.apache.spark.mllibnew.tree.model.DecisionTreeModel;
+import org.apache.spark.mllibnew.util.MLUtils;
 import org.apache.spark.SparkConf;
 
 /**
@@ -39,7 +39,7 @@ import org.apache.spark.SparkConf;
 public final class JavaDecisionTree {
 
   public static void main(String[] args) {
-    String datapath = "data/mllib2/sample_libsvm_data.txt";
+    String datapath = "data/mllibnew/sample_libsvm_data.txt";
     if (args.length == 1) {
       datapath = args[0];
     } else if (args.length > 1) {

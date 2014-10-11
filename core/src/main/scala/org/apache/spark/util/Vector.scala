@@ -22,7 +22,7 @@ import scala.util.Random
 
 import org.apache.spark.util.random.XORShiftRandom
 
-@deprecated("Use Vectors.dense from Spark's mllib2.linalg package instead.", "1.0.0")
+@deprecated("Use Vectors.dense from Spark's mllibnew.linalg package instead.", "1.0.0")
 class Vector(val elements: Array[Double]) extends Serializable {
   def length = elements.length
 

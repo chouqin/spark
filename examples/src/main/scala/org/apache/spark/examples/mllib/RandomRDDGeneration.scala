@@ -17,7 +17,7 @@
 
 package org.apache.spark.examples.mllib
 
-import org.apache.spark.mllib2.random.RandomRDDs
+import org.apache.spark.mllibnew.random.RandomRDDs
 import org.apache.spark.rdd.RDD
 
 import org.apache.spark.{SparkConf, SparkContext}
@@ -25,7 +25,7 @@ import org.apache.spark.{SparkConf, SparkContext}
 /**
  * An example app for randomly generated RDDs. Run with
  * {{{
- * bin/run-example org.apache.spark.examples.mllib2.RandomRDDGeneration
+ * bin/run-example org.apache.spark.examples.mllibnew.RandomRDDGeneration
  * }}}
  * If you use it as a template to create your own app, please use `spark-submit` to submit your app.
  */

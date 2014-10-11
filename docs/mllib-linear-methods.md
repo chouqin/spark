@@ -186,11 +186,11 @@ error.
 
 {% highlight scala %}
 import org.apache.spark.SparkContext
-import org.apache.spark.mllib2.classification.SVMWithSGD
-import org.apache.spark.mllib2.evaluation.BinaryClassificationMetrics
-import org.apache.spark.mllib2.regression.LabeledPoint
-import org.apache.spark.mllib2.linalg.Vectors
-import org.apache.spark.mllib2.util.MLUtils
+import org.apache.spark.mllibnew.classification.SVMWithSGD
+import org.apache.spark.mllibnew.evaluation.BinaryClassificationMetrics
+import org.apache.spark.mllibnew.regression.LabeledPoint
+import org.apache.spark.mllibnew.linalg.Vectors
+import org.apache.spark.mllibnew.util.MLUtils
 
 // Load training data in LIBSVM format.
 val data = MLUtils.loadLibSVMFile(sc, "data/mllib/sample_libsvm_data.txt")
@@ -229,7 +229,7 @@ variant of SVMs with regularization parameter set to 0.1, and runs the training
 algorithm for 200 iterations.
 
 {% highlight scala %}
-import org.apache.spark.mllib2.optimization.L1Updater
+import org.apache.spark.mllibnew.optimization.L1Updater
 
 val svmAlg = new SVMWithSGD()
 svmAlg.optimizer.
@@ -239,7 +239,7 @@ svmAlg.optimizer.
 val modelL1 = svmAlg.run(training)
 {% endhighlight %}
 
-[`LogisticRegressionWithSGD`](api/scala/index.html#org.apache.spark.mllib2.classification.LogisticRegressionWithSGD) can be used in a similar fashion as `SVMWithSGD`.
+[`LogisticRegressionWithSGD`](api/scala/index.html#org.apache.spark.mllibnew.classification.LogisticRegressionWithSGD) can be used in a similar fashion as `SVMWithSGD`.
 
 </div>
 
@@ -257,11 +257,11 @@ import scala.Tuple2;
 
 import org.apache.spark.api.java.*;
 import org.apache.spark.api.java.function.Function;
-import org.apache.spark.mllib2.classification.*;
-import org.apache.spark.mllib2.evaluation.BinaryClassificationMetrics;
-import org.apache.spark.mllib2.linalg.Vector;
-import org.apache.spark.mllib2.regression.LabeledPoint;
-import org.apache.spark.mllib2.util.MLUtils;
+import org.apache.spark.mllibnew.classification.*;
+import org.apache.spark.mllibnew.evaluation.BinaryClassificationMetrics;
+import org.apache.spark.mllibnew.linalg.Vector;
+import org.apache.spark.mllibnew.regression.LabeledPoint;
+import org.apache.spark.mllibnew.util.MLUtils;
 import org.apache.spark.SparkConf;
 import org.apache.spark.SparkContext;
 
@@ -313,7 +313,7 @@ variant of SVMs with regularization parameter set to 0.1, and runs the training
 algorithm for 200 iterations.
 
 {% highlight java %}
-import org.apache.spark.mllib2.optimization.L1Updater;
+import org.apache.spark.mllibnew.optimization.L1Updater;
 
 SVMWithSGD svmAlg = new SVMWithSGD();
 svmAlg.optimizer()
@@ -387,9 +387,9 @@ values. We compute the mean squared error at the end to evaluate
 [goodness of fit](http://en.wikipedia.org/wiki/Goodness_of_fit).
 
 {% highlight scala %}
-import org.apache.spark.mllib2.regression.LinearRegressionWithSGD
-import org.apache.spark.mllib2.regression.LabeledPoint
-import org.apache.spark.mllib2.linalg.Vectors
+import org.apache.spark.mllibnew.regression.LinearRegressionWithSGD
+import org.apache.spark.mllibnew.regression.LabeledPoint
+import org.apache.spark.mllibnew.linalg.Vectors
 
 // Load and parse the data
 val data = sc.textFile("data/mllib/ridge-data/lpsa.data")
@@ -411,8 +411,8 @@ val MSE = valuesAndPreds.map{case(v, p) => math.pow((v - p), 2)}.mean()
 println("training Mean Squared Error = " + MSE)
 {% endhighlight %}
 
-[`RidgeRegressionWithSGD`](api/scala/index.html#org.apache.spark.mllib2.regression.RidgeRegressionWithSGD)
-and [`LassoWithSGD`](api/scala/index.html#org.apache.spark.mllib2.regression.LassoWithSGD) can be used in a similar fashion as `LinearRegressionWithSGD`.
+[`RidgeRegressionWithSGD`](api/scala/index.html#org.apache.spark.mllibnew.regression.RidgeRegressionWithSGD)
+and [`LassoWithSGD`](api/scala/index.html#org.apache.spark.mllibnew.regression.LassoWithSGD) can be used in a similar fashion as `LinearRegressionWithSGD`.
 
 </div>
 
@@ -428,11 +428,11 @@ import scala.Tuple2;
 
 import org.apache.spark.api.java.*;
 import org.apache.spark.api.java.function.Function;
-import org.apache.spark.mllib2.linalg.Vector;
-import org.apache.spark.mllib2.linalg.Vectors;
-import org.apache.spark.mllib2.regression.LabeledPoint;
-import org.apache.spark.mllib2.regression.LinearRegressionModel;
-import org.apache.spark.mllib2.regression.LinearRegressionWithSGD;
+import org.apache.spark.mllibnew.linalg.Vector;
+import org.apache.spark.mllibnew.linalg.Vectors;
+import org.apache.spark.mllibnew.regression.LabeledPoint;
+import org.apache.spark.mllibnew.regression.LinearRegressionModel;
+import org.apache.spark.mllibnew.regression.LinearRegressionWithSGD;
 import org.apache.spark.SparkConf;
 
 public class LinearRegression {
@@ -540,9 +540,9 @@ First, we import the necessary classes for parsing our input data and creating t
 
 {% highlight scala %}
 
-import org.apache.spark.mllib2.linalg.Vectors
-import org.apache.spark.mllib2.regression.LabeledPoint
-import org.apache.spark.mllib2.regression.StreamingLinearRegressionWithSGD
+import org.apache.spark.mllibnew.linalg.Vectors
+import org.apache.spark.mllibnew.regression.LabeledPoint
+import org.apache.spark.mllibnew.regression.StreamingLinearRegressionWithSGD
 
 {% endhighlight %}
 
@@ -604,11 +604,11 @@ all three possible regularizations (none, L1 or L2).
 
 Algorithms are all implemented in Scala:
 
-* [SVMWithSGD](api/scala/index.html#org.apache.spark.mllib2.classification.SVMWithSGD)
-* [LogisticRegressionWithSGD](api/scala/index.html#org.apache.spark.mllib2.classification.LogisticRegressionWithSGD)
-* [LinearRegressionWithSGD](api/scala/index.html#org.apache.spark.mllib2.regression.LinearRegressionWithSGD)
-* [RidgeRegressionWithSGD](api/scala/index.html#org.apache.spark.mllib2.regression.RidgeRegressionWithSGD)
-* [LassoWithSGD](api/scala/index.html#org.apache.spark.mllib2.regression.LassoWithSGD)
+* [SVMWithSGD](api/scala/index.html#org.apache.spark.mllibnew.classification.SVMWithSGD)
+* [LogisticRegressionWithSGD](api/scala/index.html#org.apache.spark.mllibnew.classification.LogisticRegressionWithSGD)
+* [LinearRegressionWithSGD](api/scala/index.html#org.apache.spark.mllibnew.regression.LinearRegressionWithSGD)
+* [RidgeRegressionWithSGD](api/scala/index.html#org.apache.spark.mllibnew.regression.RidgeRegressionWithSGD)
+* [LassoWithSGD](api/scala/index.html#org.apache.spark.mllibnew.regression.LassoWithSGD)
 
 Python calls the Scala implementation via
-[PythonMLLibAPI](api/scala/index.html#org.apache.spark.mllib2.api.python.PythonMLLibAPI).
+[PythonMLLibAPI](api/scala/index.html#org.apache.spark.mllibnew.api.python.PythonMLLibAPI).

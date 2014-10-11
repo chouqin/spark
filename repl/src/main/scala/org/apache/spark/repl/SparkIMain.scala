@@ -826,9 +826,9 @@ import org.apache.spark.util.Utils
       }, util.stackTraceString(unwrapped))
     }
 
-    // TODO: split it out into a mllib2 object and a regular
+    // TODO: split it out into a mllibnew object and a regular
     // object and we can do that much less wrapping.
-    def packageDecl = "mllib2 " + packageName
+    def packageDecl = "mllibnew " + packageName
 
     def pathTo(name: String)   = packageName + "." + name
     def packaged(code: String) = packageDecl + "\n\n" + code

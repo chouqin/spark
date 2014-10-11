@@ -214,7 +214,7 @@
     </profile>
     <profile>
       <id>bigtop-dist</id>
-      <!-- This profile uses the assembly plugin to create a special "dist" mllib2 for BigTop
+      <!-- This profile uses the assembly plugin to create a special "dist" mllibnew for BigTop
            that contains Spark but not the Hadoop JARs it depends on. -->
       <build>
         <plugins>

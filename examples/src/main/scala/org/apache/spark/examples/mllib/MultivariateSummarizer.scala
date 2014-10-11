@@ -19,23 +19,23 @@ package org.apache.spark.examples.mllib
 
 import scopt.OptionParser
 
-import org.apache.spark.mllib2.linalg.Vectors
-import org.apache.spark.mllib2.stat.MultivariateOnlineSummarizer
-import org.apache.spark.mllib2.util.MLUtils
+import org.apache.spark.mllibnew.linalg.Vectors
+import org.apache.spark.mllibnew.stat.MultivariateOnlineSummarizer
+import org.apache.spark.mllibnew.util.MLUtils
 import org.apache.spark.{SparkConf, SparkContext}
 
 
 /**
  * An example app for summarizing multivariate data from a file. Run with
  * {{{
- * bin/run-example org.apache.spark.examples.mllib2.MultivariateSummarizer
+ * bin/run-example org.apache.spark.examples.mllibnew.MultivariateSummarizer
  * }}}
- * By default, this loads a synthetic dataset from `data/mllib2/sample_linear_regression_data.txt`.
+ * By default, this loads a synthetic dataset from `data/mllibnew/sample_linear_regression_data.txt`.
  * If you use it as a template to create your own app, please use `spark-submit` to submit your app.
  */
 object MultivariateSummarizer {
 
-  case class Params(input: String = "data/mllib2/sample_linear_regression_data.txt")
+  case class Params(input: String = "data/mllibnew/sample_linear_regression_data.txt")
 
   def main(args: Array[String]) {
 
@@ -50,9 +50,9 @@ object MultivariateSummarizer {
         """
         |For example, the following command runs this app on a synthetic dataset:
         |
-        | bin/spark-submit --class org.apache.spark.examples.mllib2.MultivariateSummarizer \
+        | bin/spark-submit --class org.apache.spark.examples.mllibnew.MultivariateSummarizer \
         |  examples/target/scala-*/spark-examples-*.jar \
-        |  --input data/mllib2/sample_linear_regression_data.txt
+        |  --input data/mllibnew/sample_linear_regression_data.txt
         """.stripMargin)
     }
 

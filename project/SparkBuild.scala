@@ -33,7 +33,7 @@ object BuildCommons {
   val allProjects@Seq(bagel, catalyst, core, graphx, hive, hiveThriftServer, mllib, repl,
   sql, streaming, streamingFlumeSink, streamingFlume, streamingKafka, streamingMqtt,
   streamingTwitter, streamingZeromq) =
-    Seq("bagel", "catalyst", "core", "graphx", "hive", "hive-thriftserver", "mllib2", "repl",
+    Seq("bagel", "catalyst", "core", "graphx", "hive", "hive-thriftserver", "mllibnew", "repl",
       "sql", "streaming", "streaming-flume-sink", "streaming-flume", "streaming-kafka",
       "streaming-mqtt", "streaming-twitter", "streaming-zeromq").map(ProjectRef(buildLocation, _))
 
@@ -194,7 +194,7 @@ object OldDeps {
     retrievePattern := "[type]s/[artifact](-[revision])(-[classifier]).[ext]",
     libraryDependencies := Seq("spark-streaming-mqtt", "spark-streaming-zeromq",
       "spark-streaming-flume", "spark-streaming-kafka", "spark-streaming-twitter",
-      "spark-streaming", "spark-mllib2", "spark-bagel", "spark-graphx",
+      "spark-streaming", "spark-mllibnew", "spark-bagel", "spark-graphx",
       "spark-core").map(versionArtifact(_).get intransitive())
   )
 }
@@ -317,10 +317,10 @@ object Unidoc {
         "streaming.mqtt", "streaming.twitter", "streaming.zeromq", "streaming.kinesis"
       ),
       "-group", "MLlib", packageList(
-        "mllib2.classification", "mllib2.clustering", "mllib2.evaluation.binary", "mllib2.linalg",
-        "mllib2.linalg.distributed", "mllib2.optimization", "mllib2.rdd", "mllib2.recommendation",
-        "mllib2.regression", "mllib2.stat", "mllib2.tree", "mllib2.tree.configuration",
-        "mllib2.tree.impurity", "mllib2.tree.model", "mllib2.util"
+        "mllibnew.classification", "mllibnew.clustering", "mllibnew.evaluation.binary", "mllibnew.linalg",
+        "mllibnew.linalg.distributed", "mllibnew.optimization", "mllibnew.rdd", "mllibnew.recommendation",
+        "mllibnew.regression", "mllibnew.stat", "mllibnew.tree", "mllibnew.tree.configuration",
+        "mllibnew.tree.impurity", "mllibnew.tree.model", "mllibnew.util"
       ),
       "-group", "Spark SQL", packageList("sql.api.java", "sql.api.java.types", "sql.hive.api.java"),
       "-noqualifier", "java.lang"
