@@ -19,6 +19,8 @@ package org.apache.spark.rdd
 
 import java.util.Random
 
+import org.apache.spark.ps.PSClient
+
 import scala.collection.{mutable, Map}
 import scala.collection.mutable.ArrayBuffer
 import scala.language.implicitConversions
@@ -285,6 +287,18 @@ abstract class RDD[T: ClassTag](
   def map[U: ClassTag](f: T => U): RDD[U] = {
     val cleanF = sc.clean(f)
     new MapPartitionsRDD[U, T](this, (context, pid, iter) => iter.map(cleanF))
+  }
+
+  def runWithPS[U: ClassTag](
+      tableId: Int,
+      func: (Array[T], PSClient) => U): Array[U] = {
+    val f: (TaskContext, Iterator[T]) => U = (taskContext: TaskContext, iter: Iterator[T]) => {
+      val client = taskContext.getPSClient
+      val arr = iter.toArray
+      client.initClock(0)
+      func(arr, client)
+    }
+    sc.runJobWithPS(this, f)
   }
 
   /**

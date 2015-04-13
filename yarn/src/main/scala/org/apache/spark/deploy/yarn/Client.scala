@@ -44,6 +44,7 @@ import org.apache.hadoop.yarn.util.Records
 
 import org.apache.spark.{Logging, SecurityManager, SparkConf, SparkContext, SparkException}
 import org.apache.spark.deploy.SparkHadoopUtil
+import org.apache.spark.deploy.yarn.extra.{ResourcesUtils, Extra}
 import org.apache.spark.util.Utils
 
 private[spark] class Client(
@@ -190,9 +191,8 @@ private[spark] class Client(
     if (!compareFs(srcFs, destFs)) {
       destPath = new Path(destDir, srcPath.getName())
       logInfo(s"Uploading resource $srcPath -> $destPath")
-      FileUtil.copy(srcFs, srcPath, destFs, destPath, false, hadoopConf)
+      ResourcesUtils.prepareFile(srcPath, destPath, destFs, new Path(System.getenv("SPARK_YARN_JAR_ROOT")))
       destFs.setReplication(destPath, replication)
-      destFs.setPermission(destPath, new FsPermission(APP_FILE_PERMISSION))
     } else {
       logInfo(s"Source and destination file systems are the same. Not copying $srcPath")
     }
@@ -214,7 +214,7 @@ private[spark] class Client(
     // Upload Spark and the application JAR to the remote file system if necessary,
     // and add them as local resources to the application master.
     val fs = FileSystem.get(hadoopConf)
-    val dst = new Path(fs.getHomeDirectory(), appStagingDir)
+    val dst = Extra.clientDstPath(appStagingDir)
     val nns = getNameNodesToAccess(sparkConf) + dst
     obtainTokensForNamenodes(nns, hadoopConf, credentials)
 
@@ -244,7 +244,8 @@ private[spark] class Client(
     List(
       (SPARK_JAR, sparkJar(sparkConf), CONF_SPARK_JAR),
       (APP_JAR, args.userJar, CONF_SPARK_USER_JAR),
-      ("log4j.properties", oldLog4jConf.orNull, null)
+      ("log4j.properties", oldLog4jConf.orNull, null),
+      (Extra.CORE_SITE, Extra.clientGetCoreSitePath, null)
     ).foreach { case (destName, _localPath, confKey) =>
       val localPath: String = if (_localPath != null) _localPath.trim() else ""
       if (!localPath.isEmpty()) {
@@ -380,7 +381,7 @@ private[spark] class Client(
     logInfo("Setting up container launch context for our AM")
 
     val appId = newAppResponse.getApplicationId
-    val appStagingDir = getAppStagingDir(appId)
+    val appStagingDir = Extra.clientAppStagingDir(appId, SPARK_STAGING)
     val localResources = prepareLocalResources(appStagingDir)
     val launchEnv = setupLaunchEnv(appStagingDir)
     val amContainer = Records.newRecord(classOf[ContainerLaunchContext])
@@ -401,6 +402,7 @@ private[spark] class Client(
       YarnConfiguration.DEFAULT_CONTAINER_TEMP_DIR
     )
     javaOpts += "-Djava.io.tmpdir=" + tmpDir
+    javaOpts += Extra.execRunnerAddJavaOpts("")
 
     // TODO: Remove once cpuset version is pushed out.
     // The context is, default gc for server class machines ends up using all cores to do gc -
@@ -505,11 +507,20 @@ private[spark] class Client(
         Seq(
           "--executor-memory", args.executorMemory.toString + "m",
           "--executor-cores", args.executorCores.toString,
-          "--num-executors ", args.numExecutors.toString)
+          "--num-executors ", args.numExecutors.toString,
+          "--server-memory", args.psServerMemory + "m",
+          "--server-cores", args.psServerCores.toString,
+          "--num-servers", args.numPSservers.toString,
+          "--enablePS", args.enablePS.toString)
+
+    val javaHome = sparkConf.get("spark.java.version", "1.6") match {
+      case "1.6" => Environment.JAVA_HOME.$()
+      case "1.7" => "/opt/taobao/install/jdk-1.7.0_65/"
+    }
 
     // Command for the ApplicationMaster
     val commands = prefixEnv ++ Seq(
-        YarnSparkHadoopUtil.expandEnvironment(Environment.JAVA_HOME) + "/bin/java", "-server"
+        javaHome + "/bin/java", "-server"
       ) ++
       javaOpts ++ amArgs ++
       Seq(
@@ -555,13 +566,13 @@ private[spark] class Client(
       appId: ApplicationId,
       returnOnRunning: Boolean = false,
       logApplicationReport: Boolean = true): (YarnApplicationState, FinalApplicationStatus) = {
-    val interval = sparkConf.getLong("spark.yarn.report.interval", 1000)
+    val interval = sparkConf.getLong("spark.yarn.report.interval", 3000)
     var lastState: YarnApplicationState = null
     while (true) {
       Thread.sleep(interval)
       val report = getApplicationReport(appId)
       val state = report.getYarnApplicationState
-
+      val trackUrl = Extra.clientTransferAppTrackingUrl(report.getTrackingUrl)
       if (logApplicationReport) {
         logInfo(s"Application report for $appId (state: $state)")
         val details = Seq[(String, String)](
@@ -569,19 +580,19 @@ private[spark] class Client(
           ("diagnostics", report.getDiagnostics),
           ("ApplicationMaster host", report.getHost),
           ("ApplicationMaster RPC port", report.getRpcPort.toString),
-          ("queue", report.getQueue),
+          ("Yarn queue", report.getQueue),
           ("start time", report.getStartTime.toString),
           ("final status", report.getFinalApplicationStatus.toString),
-          ("tracking URL", report.getTrackingUrl),
+          ("tracking URL", trackUrl),
           ("user", report.getUser)
         )
 
         // Use more loggable format if value is null or empty
         val formattedDetails = details
           .map { case (k, v) =>
-          val newValue = Option(v).filter(_.nonEmpty).getOrElse("N/A")
-          s"\n\t $k: $newValue" }
-          .mkString("")
+            val newValue = Option(v).filter(_.nonEmpty).getOrElse("N/A")
+            s"\n\t $k: $newValue"
+          }.mkString("")
 
         // If DEBUG is enabled, log report details every iteration
         // Otherwise, log them every time the application changes state

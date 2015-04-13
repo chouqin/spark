@@ -63,6 +63,7 @@ import org.apache.spark.storage._
 import org.apache.spark.ui.{SparkUI, ConsoleProgressBar}
 import org.apache.spark.ui.jobs.JobProgressListener
 import org.apache.spark.util._
+import java.util.concurrent.CountDownLatch
 
 /**
  * Main entry point for Spark functionality. A SparkContext represents the connection to a Spark
@@ -196,6 +197,9 @@ class SparkContext(config: SparkConf) extends Logging with ExecutorAllocationCli
   private[spark] val conf = config.clone()
   conf.validateSettings()
 
+  /** Has the server been marked for start. */
+  val startLatch = new CountDownLatch(1)
+
   /**
    * Return a copy of this SparkContext's configuration. The configuration ''cannot'' be
    * changed at runtime.
@@ -227,11 +231,9 @@ class SparkContext(config: SparkConf) extends Logging with ExecutorAllocationCli
   val appName = conf.get("spark.app.name")
 
   private[spark] val isEventLogEnabled = conf.getBoolean("spark.eventLog.enabled", false)
-  private[spark] val eventLogDir: Option[URI] = {
+  private[spark] val eventLogDir: Option[String] = {
     if (isEventLogEnabled) {
-      val unresolvedDir = conf.get("spark.eventLog.dir", EventLoggingListener.DEFAULT_LOG_DIR)
-        .stripSuffix("/")
-      Some(Utils.resolveURI(unresolvedDir))
+      Some(conf.get("spark.eventLog.dir", EventLoggingListener.DEFAULT_LOG_DIR).stripSuffix("/"))
     } else {
       None
     }
@@ -358,6 +360,11 @@ class SparkContext(config: SparkConf) extends Logging with ExecutorAllocationCli
   val sparkUser = Utils.getCurrentUserName()
   executorEnvs("SPARK_USER") = sparkUser
 
+  ui match {
+    case Some(ui) => ui.setAppUser(sparkUser)
+    case None => logInfo("spark ui unEnabled")
+  }
+
   // Create and start the scheduler
   private[spark] var (schedulerBackend, taskScheduler) =
     SparkContext.createTaskScheduler(this, master)
@@ -435,7 +442,6 @@ class SparkContext(config: SparkConf) extends Logging with ExecutorAllocationCli
   // Thread Local variable that can be used by users to pass information down the stack
   private val localProperties = new InheritableThreadLocal[Properties] {
     override protected def childValue(parent: Properties): Properties = new Properties(parent)
-    override protected def initialValue(): Properties = new Properties()
   }
 
   /**
@@ -477,6 +483,9 @@ class SparkContext(config: SparkConf) extends Logging with ExecutorAllocationCli
    * Spark fair scheduler pool.
    */
   def setLocalProperty(key: String, value: String) {
+    if (localProperties.get() == null) {
+      localProperties.set(new Properties())
+    }
     if (value == null) {
       localProperties.get.remove(key)
     } else {
@@ -1077,7 +1086,7 @@ class SparkContext(config: SparkConf) extends Logging with ExecutorAllocationCli
   def addFile(path: String, recursive: Boolean): Unit = {
     val uri = new URI(path)
     val schemeCorrectedPath = uri.getScheme match {
-      case null | "local" => new File(path).getCanonicalFile.toURI.toString
+      case null | "local" => "file:" + uri.getPath
       case _              => path
     }
 
@@ -1369,24 +1378,23 @@ class SparkContext(config: SparkConf) extends Logging with ExecutorAllocationCli
   /** Shut down the SparkContext. */
   def stop() {
     SparkContext.SPARK_CONTEXT_CONSTRUCTOR_LOCK.synchronized {
+      postApplicationEnd()
+      ui.foreach(_.stop())
       if (!stopped) {
         stopped = true
-        postApplicationEnd()
-        ui.foreach(_.stop())
         env.metricsSystem.report()
         metadataCleaner.cancel()
+        env.actorSystem.stop(heartbeatReceiver)
         cleaner.foreach(_.stop())
-        executorAllocationManager.foreach(_.stop())
         dagScheduler.stop()
         dagScheduler = null
-        listenerBus.stop()
-        eventLogger.foreach(_.stop())
-        env.actorSystem.stop(heartbeatReceiver)
         progressBar.foreach(_.stop())
         taskScheduler = null
         // TODO: Cache.stop()?
         env.stop()
         SparkEnv.set(null)
+        listenerBus.stop()
+        eventLogger.foreach(_.stop())
         logInfo("Successfully stopped SparkContext")
         SparkContext.clearActiveContext()
       } else {
@@ -1440,6 +1448,35 @@ class SparkContext(config: SparkConf) extends Logging with ExecutorAllocationCli
       val longCallSite = Option(getLocalProperty(CallSite.LONG_FORM)).getOrElse("")
       CallSite(shortCallSite, longCallSite)
     }.getOrElse(Utils.getCallSite())
+  }
+
+  /**
+   * Run a function on a given set of partitions in an RDD and pass the results to the given
+   * handler function. This is the main entry point for all actions in Spark. The allowLocal
+   * flag specifies whether the scheduler can run the computation on the driver rather than
+   * shipping it out to the cluster, for short actions like first().
+   */
+  def runJobWithPS[T, U: ClassTag](
+      rdd: RDD[T],
+      func: (TaskContext, Iterator[T]) => U): Array[U] = {
+    if (stopped) {
+      throw new IllegalStateException("SparkContext has been shutdown")
+    }
+    val callSite = getCallSite
+    val cleanedFunc = clean(func)
+    logInfo("Starting run parameter server job: " + callSite.shortForm)
+    if (conf.getBoolean("spark.logLineage", false)) {
+      logInfo("RDD's recursive dependencies:\n" + rdd.toDebugString)
+    }
+    val results = new Array[U](rdd.partitions.size)
+    val resultHandler: (Int, U) => Unit = (pid, value) => {
+      logInfo(s"partition number $pid, value: $value")
+      results(pid) = value
+    }
+    dagScheduler.runJob(rdd, cleanedFunc, 0 until rdd.partitions.size, callSite, false, resultHandler, localProperties.get)
+    progressBar.foreach(_.finishAll())
+    rdd.doCheckpoint()
+    results
   }
 
   /**
@@ -1619,7 +1656,7 @@ class SparkContext(config: SparkConf) extends Logging with ExecutorAllocationCli
    * @throws <tt>SparkException<tt> if <tt>checkSerializable</tt> is set but <tt>f</tt> is not
    *   serializable
    */
-  private[spark] def clean[F <: AnyRef](f: F, checkSerializable: Boolean = true): F = {
+   def clean[F <: AnyRef](f: F, checkSerializable: Boolean = true): F = {
     ClosureCleaner.clean(f, checkSerializable)
     f
   }
@@ -1746,6 +1783,10 @@ class SparkContext(config: SparkConf) extends Logging with ExecutorAllocationCli
   /** Called by MetadataCleaner to clean up the persistentRdds map periodically */
   private[spark] def cleanup(cleanupTime: Long) {
     persistentRdds.clearOldValues(cleanupTime)
+  }
+
+  private[spark] def queryJvmInfo(executorId: Int, command: String): String = {
+    taskScheduler.queryJvmInfo(executorId + "", command)
   }
 
   // In order to prevent multiple SparkContexts from being active at the same time, mark this

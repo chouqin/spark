@@ -36,6 +36,10 @@ private[spark] class ClientArguments(args: Array[String], sparkConf: SparkConf) 
   var executorMemory = 1024 // MB
   var executorCores = 1
   var numExecutors = DEFAULT_NUMBER_EXECUTORS
+  var psServerMemory = 1024 // MB
+  var psServerCores = 1
+  var numPSservers = DEFAULT_NUMBER_PS_SERVERS
+  var enablePS: Boolean = false
   var amQueue = sparkConf.get("spark.yarn.queue", "default")
   var amMemory: Int = 512 // MB
   var amCores: Int = 1
@@ -196,6 +200,22 @@ private[spark] class ClientArguments(args: Array[String], sparkConf: SparkConf) 
             println("--worker-cores is deprecated. Use --executor-cores instead.")
           }
           executorCores = value
+          args = tail
+
+        case ("--num-servers") :: IntParam(value) :: tail =>
+          numPSservers = value
+          args = tail
+
+        case ("--server-memory") :: MemoryParam(value) :: tail =>
+          psServerMemory = value
+          args = tail
+
+        case ("--server-cores") :: IntParam(value) :: tail =>
+          psServerCores = value
+          args = tail
+
+        case ("--enablePS") :: value :: tail =>
+          enablePS = value.toBoolean
           args = tail
 
         case ("--queue") :: value :: tail =>

@@ -20,6 +20,8 @@ package org.apache.spark.scheduler
 import java.io.{ByteArrayOutputStream, DataInputStream, DataOutputStream}
 import java.nio.ByteBuffer
 
+import org.apache.spark.ps.PSClient
+
 import scala.collection.mutable.HashMap
 
 import org.apache.spark.{TaskContextHelper, TaskContextImpl, TaskContext}
@@ -51,9 +53,9 @@ private[spark] abstract class Task[T](val stageId: Int, var partitionId: Int) ex
    * @param attemptNumber how many times this task has been attempted (0 for the first attempt)
    * @return the result of the task
    */
-  final def run(taskAttemptId: Long, attemptNumber: Int): T = {
-    context = new TaskContextImpl(stageId = stageId, partitionId = partitionId,
-      taskAttemptId = taskAttemptId, attemptNumber = attemptNumber, runningLocally = false)
+  final def run(psClient: Option[PSClient], taskAttemptId: Long, attemptNumber: Int): T = {
+    context = new TaskContextImpl(
+      stageId, partitionId, taskAttemptId, attemptNumber, psClient, false)
     TaskContextHelper.setTaskContext(context)
     context.taskMetrics.setHostname(Utils.localHostName())
     taskThread = Thread.currentThread()
@@ -102,6 +104,7 @@ private[spark] abstract class Task[T](val stageId: Int, var partitionId: Int) ex
     _killed = true
     if (context != null) {
       context.markInterrupted()
+      context.markTaskKilled()
     }
     if (interruptThread && taskThread != null) {
       taskThread.interrupt()

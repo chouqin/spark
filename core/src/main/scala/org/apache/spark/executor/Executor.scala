@@ -71,6 +71,17 @@ private[spark] class Executor(
   // Make sure the local hostname we report matches the cluster scheduler's name for this host
   Utils.setCustomHostname(executorHostname)
 
+  // If we are in yarn mode, systems can have different disk layouts so we must set it
+  // to what Yarn on this system said was available. This will be used later when SparkEnv
+  // created.
+  if (java.lang.Boolean.valueOf(
+    System.getProperty("SPARK_YARN_MODE", System.getenv("SPARK_YARN_MODE")))) {
+    conf.set("spark.local.dir", getYarnLocalDirs())
+    System.setProperty("user.home", Utils.getLocalDir(conf))
+  } else if (sys.env.contains("SPARK_LOCAL_DIRS")) {
+    conf.set("spark.local.dir", sys.env("SPARK_LOCAL_DIRS"))
+  }
+
   if (!isLocal) {
     // Setup an uncaught exception handler for non-local mode.
     // Make any thread terminations due to uncaught exceptions kill the entire
@@ -104,7 +115,7 @@ private[spark] class Executor(
   private val replClassLoader = addReplClassLoaderIfNeeded(urlClassLoader)
 
   // Set the classloader for serializer
-  env.serializer.setDefaultClassLoader(replClassLoader)
+  env.serializer.setDefaultClassLoader(urlClassLoader)
 
   // Akka's message frame size. If task result is bigger than this, we use the block manager
   // to send the result back.
@@ -145,6 +156,26 @@ private[spark] class Executor(
     if (!isLocal) {
       env.stop()
     }
+  }
+
+  /** Get the Yarn approved local directories. */
+  private def getYarnLocalDirs(): String = {
+    // Hadoop 0.23 and 2.x have different Environment variable names for the
+    // local dirs, so lets check both. We assume one of the 2 is set.
+    // LOCAL_DIRS => 2.X, YARN_LOCAL_DIRS => 0.23.X
+    val localDirs0 = Option(System.getenv("YARN_LOCAL_DIRS"))
+      .getOrElse(Option(System.getenv("LOCAL_DIRS"))
+      .getOrElse(""))
+
+    //One Yarn Machine will start multiple container, so the directory used should add containerId.
+    val containerId = System.getProperty("spark.yarn.container.id", "container_id")
+    val localDirs = localDirs0.split(",").map(rootDir => rootDir + File.separator + containerId)
+      .mkString(",")
+
+    if (localDirs.isEmpty) {
+      throw new Exception("Yarn Local dirs can't be empty")
+    }
+    localDirs
   }
 
   private def gcTime = ManagementFactory.getGarbageCollectorMXBeans.map(_.getCollectionTime).sum
@@ -200,7 +231,8 @@ private[spark] class Executor(
 
         // Run the actual task and measure its runtime.
         taskStart = System.currentTimeMillis()
-        val value = task.run(taskAttemptId = taskId, attemptNumber = attemptNumber)
+        val psClient = execBackend.getPSClient
+        val value = task.run(psClient, taskAttemptId = taskId, attemptNumber = attemptNumber)
         val taskFinish = System.currentTimeMillis()
 
         // If the task has been killed, let's fail it.

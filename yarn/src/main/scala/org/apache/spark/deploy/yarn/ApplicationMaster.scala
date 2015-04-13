@@ -40,6 +40,11 @@ import org.apache.spark.scheduler.cluster.YarnSchedulerBackend
 import org.apache.spark.scheduler.cluster.CoarseGrainedClusterMessages._
 import org.apache.spark.util.{AkkaUtils, ChildFirstURLClassLoader, MutableURLClassLoader,
   SignalLogger, Utils}
+import org.apache.spark.util.LogUtils
+import org.apache.spark.deploy.yarn.extra.Extra
+import org.apache.hadoop.yarn.webapp.util.WebAppUtils
+import org.apache.hadoop.yarn.util.ConverterUtils
+import org.apache.hadoop.conf.Configuration
 
 /**
  * Common application master functionality for Spark on Yarn.
@@ -80,6 +85,8 @@ private[spark] class ApplicationMaster(
 
   final def run(): Int = {
     try {
+      LogUtils.setLog4jForStandalone()
+      Extra.logCurrentUser(logInfo)
       val appAttemptId = client.getAttemptId()
 
       if (isClusterMode) {
@@ -92,6 +99,16 @@ private[spark] class ApplicationMaster(
 
         // Propagate the application ID so that YarnClusterSchedulerBackend can pick it up.
         System.setProperty("spark.yarn.app.id", appAttemptId.getApplicationId().toString())
+
+        // Set if need to run a job on `Parameter Server`.
+        System.setProperty("spark.enablePS", args.enablePS.toString)
+
+        // Set the number of servers.
+        System.setProperty("spark.num.servers", args.numPSServers.toString)
+
+        System.setProperty("spark.local.dir", getLocalDirs())
+        Extra.appMstSetUserHome(getLocalDirs().split(',')(0))
+        Extra.appMstSetAppId(getApplicationAttemptId().getApplicationId.toString)
       }
 
       logInfo("ApplicationAttemptId: " + appAttemptId)
@@ -154,6 +171,29 @@ private[spark] class ApplicationMaster(
           "Uncaught exception: " + e.getMessage())
     }
     exitCode
+  }
+
+  /** Get the Yarn approved local directories. */
+  private def getLocalDirs(): String = {
+    // Hadoop 0.23 and 2.x have different Environment variable names for the
+    // local dirs, so lets check both. We assume one of the 2 is set.
+    // LOCAL_DIRS => 2.X, YARN_LOCAL_DIRS => 0.23.X
+    val localDirs = Option(System.getenv("YARN_LOCAL_DIRS"))
+      .orElse(Option(System.getenv("LOCAL_DIRS")))
+
+    localDirs match {
+      case None => throw new Exception("Yarn Local dirs can't be empty")
+      case Some(l) => Extra.appMstAddLocalDirsWithContainerId(l)
+    }
+  }
+
+  private def getApplicationAttemptId(): ApplicationAttemptId = {
+    val envs = System.getenv()
+    val containerIdString = envs.get(ApplicationConstants.Environment.CONTAINER_ID.name())
+    val containerId = ConverterUtils.toContainerId(containerIdString)
+    val appAttemptId = containerId.getApplicationAttemptId()
+    logInfo("ApplicationAttemptId: " + appAttemptId)
+    appAttemptId
   }
 
   /**
@@ -224,7 +264,8 @@ private[spark] class ApplicationMaster(
         .map { address => s"${address}${HistoryServer.UI_PATH_PREFIX}/${appId}" }
         .getOrElse("")
 
-    allocator = client.register(yarnConf,
+    val enablePS = args.enablePS
+    allocator = client.register(enablePS, yarnConf,
       if (sc != null) sc.getConf else sparkConf,
       if (sc != null) sc.preferredNodeLocationData else Map(),
       uiAddress,
@@ -438,6 +479,8 @@ private[spark] class ApplicationMaster(
     if (isClusterMode) {
       System.setProperty("spark.ui.filters", amFilter)
       params.foreach { case (k, v) => System.setProperty(s"spark.$amFilter.param.$k", v) }
+      val proxy = WebAppUtils.getProxyHostAndPort(new Configuration())
+      Extra.appMstWebproxy(proxy)
     } else {
       actor ! AddWebUIFilter(amFilter, params.toMap, proxyBase)
     }
@@ -534,6 +577,7 @@ private[spark] class ApplicationMaster(
         driver ! x
 
       case RequestExecutors(requestedTotal) =>
+        logInfo(s"Driver requested a total number of $requestedTotal executor(s).")
         Option(allocator) match {
           case Some(a) => a.requestTotalExecutors(requestedTotal)
           case None => logWarning("Container allocator is not ready to request executors yet.")
@@ -557,13 +601,13 @@ object ApplicationMaster extends Logging {
   val SHUTDOWN_HOOK_PRIORITY: Int = 30
 
   // exit codes for different causes, no reason behind the values
-  private val EXIT_SUCCESS = 0
-  private val EXIT_UNCAUGHT_EXCEPTION = 10
-  private val EXIT_MAX_EXECUTOR_FAILURES = 11
-  private val EXIT_REPORTER_FAILURE = 12
-  private val EXIT_SC_NOT_INITED = 13
-  private val EXIT_SECURITY = 14
-  private val EXIT_EXCEPTION_USER_CLASS = 15
+  val EXIT_SUCCESS = 0
+  val EXIT_UNCAUGHT_EXCEPTION = 10
+  val EXIT_MAX_EXECUTOR_FAILURES = 11
+  val EXIT_REPORTER_FAILURE = 12
+  val EXIT_SC_NOT_INITED = 13
+  val EXIT_SECURITY = 14
+  val EXIT_EXCEPTION_USER_CLASS = 15
 
   private var master: ApplicationMaster = _
 

@@ -17,10 +17,14 @@
 
 package org.apache.spark.executor
 
+import java.io._
 import java.net.URL
 import java.nio.ByteBuffer
+import java.lang.management.ManagementFactory
 
-import scala.collection.mutable
+import org.apache.spark.ps.CoarseGrainedParameterServerMessage.NotifyClient
+
+import scala.collection.mutable.{HashMap, ListBuffer}
 import scala.concurrent.Await
 
 import akka.actor.{Actor, ActorSelection, Props}
@@ -31,15 +35,20 @@ import org.apache.spark.{Logging, SecurityManager, SparkConf, SparkEnv}
 import org.apache.spark.TaskState.TaskState
 import org.apache.spark.deploy.SparkHadoopUtil
 import org.apache.spark.deploy.worker.WorkerWatcher
+import org.apache.spark.ps.{PSClient, ServerInfo}
 import org.apache.spark.scheduler.TaskDescription
 import org.apache.spark.scheduler.cluster.CoarseGrainedClusterMessages._
-import org.apache.spark.util.{ActorLogReceive, AkkaUtils, SignalLogger, Utils}
+import org.apache.spark.scheduler.cluster.CoarseGrainedClusterMessages.KillTask
+import org.apache.spark.scheduler.cluster.CoarseGrainedClusterMessages.RegisterExecutor
+import org.apache.spark.scheduler.cluster.CoarseGrainedClusterMessages.RegisterExecutorFailed
+import org.apache.spark.scheduler.cluster.CoarseGrainedClusterMessages.LaunchTask
+import org.apache.spark.util._
 
 private[spark] class CoarseGrainedExecutorBackend(
     driverUrl: String,
     executorId: String,
     hostPort: String,
-    cores: Int,
+    executorVCores: Int,
     userClassPath: Seq[URL],
     env: SparkEnv)
   extends Actor with ActorLogReceive with ExecutorBackend with Logging {
@@ -48,11 +57,13 @@ private[spark] class CoarseGrainedExecutorBackend(
 
   var executor: Executor = null
   var driver: ActorSelection = null
+  val psServers = new HashMap[Long, ServerInfo]()
+  var psClient: Option[PSClient] = None
 
   override def preStart() {
     logInfo("Connecting to driver: " + driverUrl)
     driver = context.actorSelection(driverUrl)
-    driver ! RegisterExecutor(executorId, hostPort, cores, extractLogUrls)
+    driver ! RegisterExecutor(executorId, hostPort, executorVCores, extractLogUrls, System.getProperty("spark.yarn.container.id", ""))
     context.system.eventStream.subscribe(self, classOf[RemotingLifecycleEvent])
   }
 
@@ -71,6 +82,22 @@ private[spark] class CoarseGrainedExecutorBackend(
     case RegisterExecutorFailed(message) =>
       logError("Slave registration failed: " + message)
       System.exit(1)
+
+    case AddNewPSServer(serverInfo) =>
+      println("Adding new ps server")
+      psClient.synchronized {
+        if (!psClient.isDefined) {
+          val clientId: String = executorId
+          psClient = Some(new PSClient(clientId, context, env.conf))
+        }
+        psClient.get.addServer(serverInfo)
+        val serverId = serverInfo.serverId
+        psServers(serverId) = serverInfo
+      }
+
+    case NotifyClient(message) =>
+      println(s"message：$message")
+      psClient.get.notifyTasks()
 
     case LaunchTask(data) =>
       if (executor == null) {
@@ -100,6 +127,10 @@ private[spark] class CoarseGrainedExecutorBackend(
         logWarning(s"Received irrelevant DisassociatedEvent $x")
       }
 
+    case QueryJvm(command) =>
+      val retInfo = queryJvm(command)
+      sender ! RequestedJvmInfo(retInfo)
+
     case StopExecutor =>
       logInfo("Driver commanded a shutdown")
       executor.stop()
@@ -107,9 +138,52 @@ private[spark] class CoarseGrainedExecutorBackend(
       context.system.shutdown()
   }
 
+  def queryJvm(command: String): String = {
+    val ret = runShellCmd(command)
+    ret
+  }
+
+  def runShellCmd(command: String): String = {
+    var pid = ManagementFactory.getRuntimeMXBean.getName
+    val indexOf = pid.indexOf('@')
+    if (indexOf > 0)
+    {
+      pid = pid.substring(0, indexOf)
+    }
+
+    val coms = command.split("%2520")
+
+    val sb = new StringBuilder
+
+    for(i <- 0 until coms.length){
+      sb.append(coms(i)).append(" ")
+    }
+
+    val _command = sb.toString() + " " + pid
+
+    val processList = new StringBuffer
+    try {
+      val process = Runtime.getRuntime.exec(_command)
+      val input = new BufferedReader(new InputStreamReader(process.getInputStream))
+      var line = input.readLine()
+      while (line != null) {
+        processList.append(line).append("\n")
+        line = input.readLine()
+      }
+      input.close()
+    } catch {
+      case e: IOException =>
+        e.printStackTrace()
+    }
+
+    processList.toString
+  }
+
   override def statusUpdate(taskId: Long, state: TaskState, data: ByteBuffer) {
     driver ! StatusUpdate(executorId, taskId, state, data)
   }
+
+  override def getPSClient: Option[PSClient] = psClient
 }
 
 private[spark] object CoarseGrainedExecutorBackend extends Logging {
@@ -147,6 +221,7 @@ private[spark] object CoarseGrainedExecutorBackend extends Logging {
 
       // Create SparkEnv using properties we fetched from the driver.
       val driverConf = new SparkConf()
+      val executorVCores = cores * driverConf.get("spark.cores.ratio", "1").toInt
       for ((key, value) <- props) {
         // this is required for SSL in standalone mode
         if (SparkConf.isExecutorStartupConf(key)) {
@@ -156,7 +231,7 @@ private[spark] object CoarseGrainedExecutorBackend extends Logging {
         }
       }
       val env = SparkEnv.createExecutorEnv(
-        driverConf, executorId, hostname, port, cores, isLocal = false)
+        driverConf, executorId, hostname, port, executorVCores, isLocal = false)
 
       // SparkEnv sets spark.driver.port so it shouldn't be 0 anymore.
       val boundPort = env.conf.getInt("spark.executor.port", 0)
@@ -166,7 +241,7 @@ private[spark] object CoarseGrainedExecutorBackend extends Logging {
       val sparkHostPort = hostname + ":" + boundPort
       env.actorSystem.actorOf(
         Props(classOf[CoarseGrainedExecutorBackend],
-          driverUrl, executorId, sparkHostPort, cores, userClassPath, env),
+          driverUrl, executorId, sparkHostPort, executorVCores, userClassPath, env),
         name = "Executor")
       workerUrl.foreach { url =>
         env.actorSystem.actorOf(Props(classOf[WorkerWatcher], url), name = "WorkerWatcher")
@@ -176,13 +251,14 @@ private[spark] object CoarseGrainedExecutorBackend extends Logging {
   }
 
   def main(args: Array[String]) {
+    LogUtils.setLog4jForStandalone()
     var driverUrl: String = null
     var executorId: String = null
     var hostname: String = null
     var cores: Int = 0
     var appId: String = null
     var workerUrl: Option[String] = None
-    val userClassPath = new mutable.ListBuffer[URL]()
+    val userClassPath = new ListBuffer[URL]()
 
     var argv = args.toList
     while (!argv.isEmpty) {

@@ -21,8 +21,9 @@ import java.io.Serializable
 
 import org.apache.spark.annotation.DeveloperApi
 import org.apache.spark.executor.TaskMetrics
+import org.apache.spark.ps.PSClient
 import org.apache.spark.util.TaskCompletionListener
-
+import org.apache.spark.util.TaskKilledListener
 
 object TaskContext {
   /**
@@ -106,6 +107,20 @@ abstract class TaskContext extends Serializable {
   def addOnCompleteCallback(f: () => Unit)
 
   /**
+   * Add a (Java friendly) listener to be executed on task interruption. We add this
+   * listener for some more clean works. An example use is to stop `receiver supervisor`
+   * properly.
+   */
+  def addTaskKilledListener(listener: TaskKilledListener): TaskContext
+
+  /**
+   * Add a listener in the form of a Scala closure to be executed on task interruption.
+   * We add this listener for some more clean works. An example use is stop `receiver
+   * supervisor` properly.
+   */
+  def addTaskKilledListener(f: TaskContext => Unit): TaskContext
+
+  /**
    * The ID of the stage that this task belong to.
    */
   def stageId(): Int
@@ -133,4 +148,6 @@ abstract class TaskContext extends Serializable {
   /** ::DeveloperApi:: */
   @DeveloperApi
   def taskMetrics(): TaskMetrics
+
+  def getPSClient: PSClient
 }

@@ -84,6 +84,7 @@ class DAGSchedulerSuite extends FunSuiteLike  with BeforeAndAfter with LocalSpar
     override def schedulingMode: SchedulingMode = SchedulingMode.NONE
     override def start() = {}
     override def stop() = {}
+    override def queryJvmInfo(executorId: String, command: String): String = { "empty." }
     override def executorHeartbeatReceived(execId: String, taskMetrics: Array[(Long, TaskMetrics)],
       blockManagerId: BlockManagerId): Boolean = true
     override def submitTasks(taskSet: TaskSet) = {
@@ -376,6 +377,7 @@ class DAGSchedulerSuite extends FunSuiteLike  with BeforeAndAfter with LocalSpar
       override def schedulingMode: SchedulingMode = SchedulingMode.NONE
       override def start() = {}
       override def stop() = {}
+      override def queryJvmInfo(executorId: String, command: String): String = ""
       override def submitTasks(taskSet: TaskSet) = {
         taskSets += taskSet
       }
@@ -765,7 +767,6 @@ class DAGSchedulerSuite extends FunSuiteLike  with BeforeAndAfter with LocalSpar
     assert(scheduler.runningStages.isEmpty)
     assert(scheduler.shuffleToMapStage.isEmpty)
     assert(scheduler.waitingStages.isEmpty)
-    assert(scheduler.outputCommitCoordinator.isEmpty)
   }
 
   // Nothing in this test should break if the task info's fields are null, but

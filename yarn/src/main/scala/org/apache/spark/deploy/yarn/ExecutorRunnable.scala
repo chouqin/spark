@@ -40,8 +40,10 @@ import org.apache.hadoop.yarn.util.{ConverterUtils, Records}
 
 import org.apache.spark.{Logging, SecurityManager, SparkConf, SparkException}
 import org.apache.spark.network.util.JavaUtils
+import org.apache.spark.deploy.yarn.extra.Extra
 
 class ExecutorRunnable(
+    isPSServer: Boolean,
     container: Container,
     conf: Configuration,
     sparkConf: SparkConf,
@@ -84,7 +86,7 @@ class ExecutorRunnable(
     ctx.setTokens(ByteBuffer.wrap(dob.getData()))
 
     val commands = prepareCommand(masterAddress, slaveId, hostname, executorMemory, executorCores,
-      appId, localResources)
+      appId, localResources, container.getId.toString)
 
     logInfo(s"Setting up executor with environment: $env")
     logInfo("Setting up executor with commands: " + commands)
@@ -125,7 +127,8 @@ class ExecutorRunnable(
       executorMemory: Int,
       executorCores: Int,
       appId: String,
-      localResources: HashMap[String, LocalResource]): List[String] = {
+      localResources: HashMap[String, LocalResource],
+      containerId: String): List[String] = {
     // Extra options for the JVM
     val javaOpts = ListBuffer[String]()
 
@@ -149,11 +152,14 @@ class ExecutorRunnable(
       prefixEnv = Some(Utils.libraryPathEnvPrefix(Seq(p)))
     }
 
+    javaOpts += Extra.execRunnerAddJavaOpts(containerId)
     javaOpts += "-Djava.io.tmpdir=" +
       new Path(
         YarnSparkHadoopUtil.expandEnvironment(Environment.PWD),
         YarnConfiguration.DEFAULT_CONTAINER_TEMP_DIR
       )
+
+    javaOpts += "-Dspark.yarn.log.level" + "=" + System.getProperty("spark.yarn.log.level", "INFO")
 
     // Certain configs need to be passed here because they are needed before the Executor
     // registers with the Scheduler and transfers the spark configs. Since the Executor backend
@@ -202,8 +208,19 @@ class ExecutorRunnable(
       Seq("--user-class-path", "file:" + absPath)
     }.toSeq
 
+    val javaHome = sparkConf.get("spark.java.version", "1.6") match {
+      case "1.6" => Environment.JAVA_HOME.$()
+      case "1.7" => "/opt/taobao/install/jdk-1.7.0_65/"
+    }
+
+    val workerBackend = if (isPSServer) {
+        "org.apache.spark.ps.CoarseGrainedParameterServerBackend"
+      } else {
+        "org.apache.spark.executor.CoarseGrainedExecutorBackend"
+      }
+
     val commands = prefixEnv ++ Seq(
-      YarnSparkHadoopUtil.expandEnvironment(Environment.JAVA_HOME) + "/bin/java",
+      javaHome + "/bin/java",
       "-server",
       // Kill if OOM is raised - leverage yarn's failure handling to cause rescheduling.
       // Not killing the task leaves various aspects of the executor and (to some extent) the jvm in
@@ -212,7 +229,7 @@ class ExecutorRunnable(
       // 'something' to fail job ... akin to blacklisting trackers in mapred ?
       "-XX:OnOutOfMemoryError='kill %p'") ++
       javaOpts ++
-      Seq("org.apache.spark.executor.CoarseGrainedExecutorBackend",
+      Seq(workerBackend,
         "--driver-url", masterAddress.toString,
         "--executor-id", slaveId.toString,
         "--hostname", hostname.toString,
@@ -294,8 +311,9 @@ class ExecutorRunnable(
     sys.env.get("SPARK_USER").foreach { user =>
       val baseUrl = "http://%s/node/containerlogs/%s/%s"
         .format(container.getNodeHttpAddress, ConverterUtils.toString(container.getId), user)
-      env("SPARK_LOG_URL_STDERR") = s"$baseUrl/stderr?start=0"
-      env("SPARK_LOG_URL_STDOUT") = s"$baseUrl/stdout?start=0"
+      env("SPARK_LOG_URL_STDERR") = s"$baseUrl/stderr.log?start=0"
+      env("SPARK_LOG_URL_STDOUT") = s"$baseUrl/stdout.log?start=0"
+      env("SPARK_LOG_URL_SYSLOG") = s"$baseUrl/syslog?start=0"
     }
 
     System.getenv().filterKeys(_.startsWith("SPARK")).foreach { case (k, v) => env(k) = v }

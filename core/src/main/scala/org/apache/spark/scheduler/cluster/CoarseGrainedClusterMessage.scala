@@ -21,6 +21,8 @@ import java.nio.ByteBuffer
 
 import org.apache.spark.TaskState.TaskState
 import org.apache.spark.util.{SerializableBuffer, Utils}
+import scala.Predef._
+import org.apache.spark.ps.ServerInfo
 
 private[spark] sealed trait CoarseGrainedClusterMessage extends Serializable
 
@@ -43,7 +45,8 @@ private[spark] object CoarseGrainedClusterMessages {
       executorId: String,
       hostPort: String,
       cores: Int,
-      logUrls: Map[String, String])
+      logUrls: Map[String, String],
+      containerId: String)
     extends CoarseGrainedClusterMessage {
     Utils.checkHostPort(hostPort, "Expected host port")
   }
@@ -74,6 +77,12 @@ private[spark] object CoarseGrainedClusterMessages {
   case class AddWebUIFilter(filterName:String, filterParams: Map[String, String], proxyBase: String)
     extends CoarseGrainedClusterMessage
 
+  case class QueryJvmInfo(executorId: String, command: String) extends CoarseGrainedClusterMessage
+
+  case class QueryJvm(command: String) extends CoarseGrainedClusterMessage
+
+  case class RequestedJvmInfo(jvmInfo: String) extends CoarseGrainedClusterMessage
+
   // Messages exchanged between the driver and the cluster manager for executor allocation
   // In Yarn mode, these are exchanged between the driver and the AM
 
@@ -84,5 +93,18 @@ private[spark] object CoarseGrainedClusterMessages {
   case class RequestExecutors(requestedTotal: Int) extends CoarseGrainedClusterMessage
 
   case class KillExecutors(executorIds: Seq[String]) extends CoarseGrainedClusterMessage
+
+  case class RegisterServer(
+      executorId: String,
+      hostPort: String,
+      cores: Int,
+      containerId: String)
+    extends CoarseGrainedClusterMessage {
+      Utils.checkHostPort(hostPort, "Expected host port")
+  }
+
+  case class RegisteredServer(serverId: Long) extends CoarseGrainedClusterMessage
+
+  case class AddNewPSServer(serverInfo: ServerInfo) extends CoarseGrainedClusterMessage
 
 }

@@ -19,6 +19,8 @@ package org.apache.spark.scheduler.local
 
 import java.nio.ByteBuffer
 
+import org.apache.spark.ps.PSClient
+
 import scala.concurrent.duration._
 
 import akka.actor.{Actor, ActorRef, Props}
@@ -123,9 +125,13 @@ private[spark] class LocalBackend(scheduler: TaskSchedulerImpl, val totalCores: 
     localActor ! KillTask(taskId, interruptThread)
   }
 
+  override def queryJvmInfo(executorId: String, command: String): String = { "empty." }
+
   override def statusUpdate(taskId: Long, state: TaskState, serializedData: ByteBuffer) {
     localActor ! StatusUpdate(taskId, state, serializedData)
   }
+
+  override def getPSClient: Option[PSClient] = None
 
   override def applicationId(): String = appId
 
