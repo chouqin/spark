@@ -1,8 +1,7 @@
 package org.apache.spark.examples.mllib
 
-import org.apache.spark.mllib.classification.{NPSLogisticRegression, PSLogisticRegression}
+import org.apache.spark.mllib.classification.PSLogisticRegression
 import org.apache.spark.mllib.evaluation.BinaryClassificationMetrics
-import org.apache.spark.mllib.linalg.Vectors
 import org.apache.spark.mllib.regression.LabeledPoint
 import org.apache.spark.mllib.util.MLUtils
 import org.apache.spark.{SparkContext, SparkConf}
